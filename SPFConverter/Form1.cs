@@ -14,11 +14,11 @@ namespace SPFConverter
             openFileDialog = new OpenFileDialog();
             saveFileDialog = new SaveFileDialog();
 
-            var btnSpfToPng = new Button { Text = "SPF to PNG", AutoSize = true, Location = new Point(10, 10) };
+            var btnSpfToPng = new Button { Text = "SPF to PNG", AutoSize = true, Location = new Point(30, 15), BackColor = Color.DodgerBlue, ForeColor = Color.White};
             btnSpfToPng.Click += BtnSpfToPng_Click;
             Controls.Add(btnSpfToPng);
 
-            var btnPngToSpf = new Button { Text = "PNG to SPF", AutoSize = true, Location = new Point(10, 50) };
+            var btnPngToSpf = new Button { Text = "PNG to SPF", AutoSize = true, Location = new Point(30, 60), BackColor = Color.DodgerBlue, ForeColor = Color.White};
             btnPngToSpf.Click += BtnPngToSpf_Click;
             Controls.Add(btnPngToSpf);
         }
@@ -34,6 +34,8 @@ namespace SPFConverter
                     if (saveFileDialog.ShowDialog() == DialogResult.OK)
                     {
                         var spfFile = SpfFile.FromFile(openFileDialog.FileName);
+                        
+                        // ToDo: Create loop here to save multiple frames
                         spfFile.Frames[0].FrameBitmap.Save(saveFileDialog.FileName, ImageFormat.Png);
                     }
                 }
