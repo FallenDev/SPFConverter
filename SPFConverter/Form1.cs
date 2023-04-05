@@ -6,6 +6,7 @@ namespace SPFConverter
     {
         private OpenFileDialog openFileDialog;
         private SaveFileDialog saveFileDialog;
+        private Bitmap _loadedBitmap;
 
         public Form1()
         {
@@ -56,7 +57,8 @@ namespace SPFConverter
                     saveFileDialog.Filter = "SPF Files|*.spf";
                     if (saveFileDialog.ShowDialog() == DialogResult.OK)
                     {
-                        SpfConverter.PngToSpf(openFileDialog.FileName, saveFileDialog.FileName);
+                        _loadedBitmap = new Bitmap(openFileDialog.FileName);
+                        SpfConverter.PngToSpf(saveFileDialog.FileName, _loadedBitmap);
                     }
                 }
                 catch (Exception ex)
