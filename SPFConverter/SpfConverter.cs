@@ -24,6 +24,11 @@ namespace SPFConverter
                 //ColorFormat = 0 // Assuming 8bpp indexed format for simplicity
             };
 
+            // Starting SPF File
+            binaryWriter.Write(0000);
+            binaryWriter.Write(0001);
+            binaryWriter.Write(0000);
+
             var headerBytes = SpfFileHeaderToBytes(header);
             binaryWriter.Write(headerBytes);
 
