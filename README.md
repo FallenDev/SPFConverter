@@ -5,4 +5,4 @@
 ### Takes a SPF and Outputs PNG  
 ----------------------------------  
   
-Currently the encoding from png to spf does not correctly encode.
+Currently the encoding 16bpp is being worked on, also alpha channel is in progress.
