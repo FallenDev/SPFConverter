@@ -31,17 +31,26 @@ namespace SPFConverter
             var paletteBytes = SpfPaletteToBytes(palette);
 
             // Concatenate header with palette
-            headerBytes = headerBytes.Concat(paletteBytes).ToArray();
+            var combinedBytes = headerBytes.Concat(paletteBytes).ToArray();
             
             // Write file header and palette
-            binaryWriter.Write(headerBytes);
+            binaryWriter.Write(combinedBytes);
 
-            // Write the frame count (only one frame for simplicity)
-            binaryWriter.Write(1);
+            // Write the frame count uint
+            binaryWriter.Write((uint)1);
 
             // Write the frame header
             var frameHeaderBytes = SpfFrameHeaderToBytes(loadedBitmap);
             binaryWriter.Write(frameHeaderBytes);
+
+            // Write the bytesTotal (bitmap width & bitmap height) *2 if 16bpp
+            uint bytesTotal;
+            if (loadedBitmap.PixelFormat == PixelFormat.Format8bppIndexed)
+                bytesTotal = (uint)(loadedBitmap.Width * loadedBitmap.Height);
+            else
+                bytesTotal = (uint)(loadedBitmap.Width * loadedBitmap.Height) * 2;
+
+            binaryWriter.Write(bytesTotal);
 
             // Write the frame data
             var frameDataBytes = BitmapToFrameData(loadedBitmap, palette);
@@ -64,10 +73,10 @@ namespace SPFConverter
         private static byte[] SpfPaletteToBytes(SpfPalette palette)
         {
             // Convert the palette struct to bytes
-            var paletteBytes = new byte[palette._rgb.Length /*+ palette._colors.Length*/];
-            Array.Copy(palette._rgb, 0, paletteBytes, 0, palette._rgb.Length);
-            //Array.Copy(palette._colors, 0, paletteBytes, palette._rgb.Length, palette._colors.Length);
-            return paletteBytes;
+            var combinedArray = new byte[palette._alpha.Length + palette._rgb.Length];
+            Array.Copy(palette._alpha, 0, combinedArray, 0, palette._alpha.Length);
+            Array.Copy(palette._rgb, 0, combinedArray, palette._alpha.Length, palette._rgb.Length);
+            return combinedArray;
         }
 
         private static byte[] SpfFrameHeaderToBytes(Bitmap bitmap)
@@ -82,13 +91,13 @@ namespace SPFConverter
             spfFrameHeader.Reserved = 0;
             spfFrameHeader.StartAddress = 0; // Set this value later when you know the correct start address
             spfFrameHeader.ByteWidth = (uint)bitmap.Width;
-            spfFrameHeader.ByteCount = (uint)(bitmap.Width * bitmap.Height); // Assuming 8bppIndexed format
             spfFrameHeader.SemiByteCount = 0; // You can set this value later if you need it for your specific use case
 
-            if (bitmap.PixelFormat == PixelFormat.Format16bppRgb555)
-            {
-                spfFrameHeader.ByteCount *= 2;
-            }
+            // Write the bytesTotal (bitmap width & bitmap height) *2 if 16bpp
+            if (bitmap.PixelFormat == PixelFormat.Format8bppIndexed)
+                spfFrameHeader.ByteCount = (uint)(bitmap.Width * bitmap.Height);
+            else
+                spfFrameHeader.ByteCount = (uint)(bitmap.Width * bitmap.Height) * 2;
 
             // Convert the SpfFrameHeader struct to bytes
             var headerBytes = new byte[Marshal.SizeOf(typeof(SpfFrameHeader))];
@@ -104,6 +113,7 @@ namespace SPFConverter
             // Create an empty SpfPalette struct
             var spfPalette = new SpfPalette
             {
+                _alpha = new byte[512],
                 _rgb = new byte[512],
                 _colors = new Color[256]
             };
@@ -145,13 +155,13 @@ namespace SPFConverter
             frameHeader.Reserved = 0;
             frameHeader.StartAddress = 0; // Set this value later when you know the correct start address
             frameHeader.ByteWidth = (uint)bitmap.Width;
-            frameHeader.ByteCount = (uint)(bitmap.Width * bitmap.Height); // Assuming 8bppIndexed format
             frameHeader.SemiByteCount = 0; // You can set this value later if you need it for your specific use case
 
-            if (bitmap.PixelFormat == PixelFormat.Format16bppRgb555)
-            {
-                frameHeader.ByteCount *= 2;
-            }
+            // Write the bytesTotal (bitmap width & bitmap height) *2 if 16bpp
+            if (bitmap.PixelFormat == PixelFormat.Format8bppIndexed)
+                frameHeader.ByteCount = (uint)(bitmap.Width * bitmap.Height);
+            else
+                frameHeader.ByteCount = (uint)(bitmap.Width * bitmap.Height) * 2;
 
             var spfFrame = new SpfFrame(frameHeader, 0, spfPalette);
             spfFrame.FrameBitmap = (Bitmap)bitmap.Clone();
