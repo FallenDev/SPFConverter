@@ -15,27 +15,26 @@ namespace SPFConverter
             using var fileStream = new FileStream(outputSpfFilePath, FileMode.Create);
             using var binaryWriter = new BinaryWriter(fileStream);
 
-            // Write the header
+            // Create header
             var header = new SpfFileHeader
             {
-                Width = (uint)loadedBitmap.Width,
-                Height = (uint)loadedBitmap.Height,
+                Unknown1 = 0,
+                Unknown2 = 1,
                 ColorFormat = loadedBitmap.PixelFormat == PixelFormat.Format8bppIndexed ? (uint)0 : (uint)1
-                //ColorFormat = 0 // Assuming 8bpp indexed format for simplicity
             };
-
-            // Starting SPF File
-            binaryWriter.Write(0000);
-            binaryWriter.Write(0001);
-            binaryWriter.Write(0000);
-
+            
+            // Convert header to bytes
             var headerBytes = SpfFileHeaderToBytes(header);
-            binaryWriter.Write(headerBytes);
 
-            // Write the palette
+            // Convert to palette
             var palette = SpfPaletteFromBitmap(loadedBitmap);
             var paletteBytes = SpfPaletteToBytes(palette);
-            binaryWriter.Write(paletteBytes);
+
+            // Concatenate header with palette
+            headerBytes = headerBytes.Concat(paletteBytes).ToArray();
+            
+            // Write file header and palette
+            binaryWriter.Write(headerBytes);
 
             // Write the frame count (only one frame for simplicity)
             binaryWriter.Write(1);
@@ -52,7 +51,7 @@ namespace SPFConverter
         private static byte[] SpfFileHeaderToBytes(SpfFileHeader header)
         {
             // Convert the header struct to bytes
-            var headerSize = Marshal.SizeOf(typeof(SpfFileHeader));
+            var headerSize = Marshal.SizeOf(header);
             var headerBytes = new byte[headerSize];
 
             var gcHandle = GCHandle.Alloc(headerBytes, GCHandleType.Pinned);
@@ -65,10 +64,9 @@ namespace SPFConverter
         private static byte[] SpfPaletteToBytes(SpfPalette palette)
         {
             // Convert the palette struct to bytes
-            byte[] paletteBytes = new byte[palette._alpha.Length + palette._rgb.Length];
-            Array.Copy(palette._alpha, 0, paletteBytes, 0, palette._alpha.Length);
-            Array.Copy(palette._rgb, 0, paletteBytes, palette._alpha.Length, palette._rgb.Length);
-
+            var paletteBytes = new byte[palette._rgb.Length /*+ palette._colors.Length*/];
+            Array.Copy(palette._rgb, 0, paletteBytes, 0, palette._rgb.Length);
+            //Array.Copy(palette._colors, 0, paletteBytes, palette._rgb.Length, palette._colors.Length);
             return paletteBytes;
         }
 
@@ -93,8 +91,8 @@ namespace SPFConverter
             }
 
             // Convert the SpfFrameHeader struct to bytes
-            byte[] headerBytes = new byte[Marshal.SizeOf(typeof(SpfFrameHeader))];
-            GCHandle gcHandle = GCHandle.Alloc(headerBytes, GCHandleType.Pinned);
+            var headerBytes = new byte[Marshal.SizeOf(typeof(SpfFrameHeader))];
+            var gcHandle = GCHandle.Alloc(headerBytes, GCHandleType.Pinned);
             Marshal.StructureToPtr(spfFrameHeader, gcHandle.AddrOfPinnedObject(), false);
             gcHandle.Free();
 
@@ -104,36 +102,34 @@ namespace SPFConverter
         private static SpfPalette SpfPaletteFromBitmap(Bitmap bitmap)
         {
             // Create an empty SpfPalette struct
-            SpfPalette spfPalette = new SpfPalette();
-            spfPalette._alpha = new byte[512];
-            spfPalette._rgb = new byte[512];
-            spfPalette._colors = new Color[256];
+            var spfPalette = new SpfPalette
+            {
+                _rgb = new byte[512],
+                _colors = new Color[256]
+            };
 
             // Extract colors from the Bitmap
-            ColorPalette colorPalette = bitmap.Palette;
-            int colorCount = colorPalette.Entries.Length;
+            var colorPalette = bitmap.Palette;
+            var colorCount = colorPalette.Entries.Length;
 
             // Fill the _colors array with the extracted colors
-            for (int i = 0; i < colorCount; i++)
-            {
+            for (var i = 0; i < colorCount; i++)
                 spfPalette._colors[i] = colorPalette.Entries[i];
-            }
 
             // Convert colors to RGB 555 format and store them in the _rgb array
-            for (int i = 0; i < colorCount; i++)
+            for (var i = 0; i < colorCount; i++)
             {
-                Color color = spfPalette._colors[i];
-                int red = color.R / 8;
-                int green = color.G / 8;
-                int blue = color.B / 8;
-                ushort rgb555 = (ushort)((red << 10) | (green << 5) | blue);
-                byte[] rgbBytes = BitConverter.GetBytes(rgb555);
+                var color = spfPalette._colors[i];
+                var red = color.R / 8;
+                var green = color.G / 8;
+                var blue = color.B / 8;
+                var rgb555 = (ushort)((red << 10) | (green << 5) | blue);
+                var rgbBytes = BitConverter.GetBytes(rgb555);
 
                 spfPalette._rgb[i * 2] = rgbBytes[0];
                 spfPalette._rgb[i * 2 + 1] = rgbBytes[1];
             }
 
-            // Note: The _alpha array is left uninitialized (filled with zeros) since PNG images don't use the alpha channel in the same way as SPF files
             return spfPalette;
         }
 
@@ -157,9 +153,9 @@ namespace SPFConverter
                 frameHeader.ByteCount *= 2;
             }
 
-            SpfFrame spfFrame = new SpfFrame(frameHeader, 0, spfPalette);
+            var spfFrame = new SpfFrame(frameHeader, 0, spfPalette);
             spfFrame.FrameBitmap = (Bitmap)bitmap.Clone();
-            byte[] frameData = spfFrame.GetRawBits();
+            var frameData = spfFrame.GetRawBits();
 
             return frameData;
         }

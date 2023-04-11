@@ -71,11 +71,7 @@ namespace SPFConverter
 
             return spfFile;
         }
-
-        public uint Width => _mHeader.Width;
-
-        public uint Height => _mHeader.Height;
-
+        
         public uint ColorFormat => _mHeader.ColorFormat;
 
         public uint FrameCount => _mFramecount;
@@ -85,8 +81,8 @@ namespace SPFConverter
 
     public struct SpfFileHeader
     {
-        public uint Width;
-        public uint Height;
+        public uint Unknown1;
+        public uint Unknown2;
         public uint ColorFormat;
 
         public static SpfFileHeader FromBinaryReaderBlock(BinaryReader br)
