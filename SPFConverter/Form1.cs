@@ -63,7 +63,7 @@ namespace SPFConverter
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error converting PNG to SPF: {ex.Message}");
+                    MessageBox.Show($"Error converting PNG to SPF: {ex.Message} {ex.StackTrace}");
                 }
             }
         }

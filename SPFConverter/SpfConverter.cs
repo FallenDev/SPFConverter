@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -22,7 +23,7 @@ namespace SPFConverter
                 Unknown2 = 1,
                 ColorFormat = loadedBitmap.PixelFormat == PixelFormat.Format8bppIndexed ? (uint)0 : (uint)1
             };
-            
+
             // Convert header to bytes
             var headerBytes = SpfFileHeaderToBytes(header);
 
@@ -32,7 +33,7 @@ namespace SPFConverter
 
             // Concatenate header with palette
             var combinedBytes = headerBytes.Concat(paletteBytes).ToArray();
-            
+
             // Write file header and palette
             binaryWriter.Write(combinedBytes);
 
@@ -59,6 +60,9 @@ namespace SPFConverter
 
         private static SpfPalette SpfPaletteFromBitmap(Bitmap bitmap)
         {
+            // If the image is not 8bppIndexed, convert it first
+            var bitmapIndexed = bitmap.PixelFormat != PixelFormat.Format8bppIndexed ? ConvertTo8bppIndexed(bitmap) : bitmap;
+
             // Create an empty SpfPalette struct
             var spfPalette = new SpfPalette
             {
@@ -68,7 +72,8 @@ namespace SPFConverter
             };
 
             // Extract colors from the Bitmap
-            var colorPalette = bitmap.Palette;
+            var colorPalette = bitmapIndexed.Palette;
+
             var colorCount = colorPalette.Entries.Length;
 
             // Fill the _colors array with the extracted colors
@@ -88,13 +93,75 @@ namespace SPFConverter
                 spfPalette._rgb[i * 2] = rgbBytes[0];
                 spfPalette._rgb[i * 2 + 1] = rgbBytes[1];
 
-                spfPalette._alpha[i * 2] = color.A;
-                spfPalette._alpha[i * 2 + 1] = 0;
+                // Check if the color is #000000 and set the alpha value to 0
+                if (red == 0 && green == 0 && blue == 0)
+                {
+                    spfPalette._alpha[i * 2] = 0;
+                    spfPalette._alpha[i * 2 + 1] = 0;
+                }
+                else
+                {
+                    spfPalette._alpha[i * 2] = 255;
+                    spfPalette._alpha[i * 2 + 1] = 0;
+                }
             }
 
             return spfPalette;
         }
-        
+
+        private static Bitmap ConvertTo8bppIndexed(Bitmap input)
+        {
+            // First, create a temporary 32-bit image
+            var bitmap32bpp = new Bitmap(input.Width, input.Height, PixelFormat.Format32bppArgb);
+
+            // Draw the input image on the 32-bit image
+            using (var g = Graphics.FromImage(bitmap32bpp))
+            {
+                g.DrawImage(input, new Rectangle(0, 0, input.Width, input.Height), 0, 0, input.Width, input.Height, GraphicsUnit.Pixel);
+            }
+
+            var bitmap8bpp = new Bitmap(input.Width, input.Height, PixelFormat.Format8bppIndexed);
+            var palette = bitmap8bpp.Palette;
+
+            for (int i = 0; i < palette.Entries.Length; i++)
+            {
+                int alpha = (i * 0xFF) / (palette.Entries.Length - 1);
+                palette.Entries[i] = Color.FromArgb(alpha, Color.Black);
+            }
+
+            bitmap8bpp.Palette = palette;
+
+            var rect = new Rectangle(0, 0, bitmap8bpp.Width, bitmap8bpp.Height);
+            var bitmapData = bitmap8bpp.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format8bppIndexed);
+
+            using (var g = Graphics.FromImage(bitmap32bpp))
+            {
+                var imageAttributes = new ImageAttributes();
+
+                ColorMap[] colorMap = new ColorMap[palette.Entries.Length];
+                for (int i = 0; i < palette.Entries.Length; i++)
+                {
+                    colorMap[i] = new ColorMap
+                    {
+                        OldColor = Color.FromArgb(i, Color.Black),
+                        NewColor = palette.Entries[i]
+                    };
+                }
+
+                imageAttributes.SetRemapTable(colorMap);
+                g.DrawImage(bitmap32bpp, rect, 0, 0, input.Width, input.Height, GraphicsUnit.Pixel, imageAttributes);
+            }
+
+            IntPtr ptr = bitmapData.Scan0;
+            int size = bitmapData.Stride * bitmap8bpp.Height;
+            byte[] imageData = new byte[size];
+            System.Runtime.InteropServices.Marshal.Copy(ptr, imageData, 0, size);
+            System.Runtime.InteropServices.Marshal.Copy(imageData, 0, ptr, size);
+            bitmap8bpp.UnlockBits(bitmapData);
+
+            return bitmap8bpp;
+        }
+
         private static byte[] SpfFileHeaderToBytes(SpfFileHeader header)
         {
             // Convert the header struct to bytes
@@ -156,7 +223,7 @@ namespace SPFConverter
             frameHeader.PixelHeight = (ushort)bitmap.Height;
             frameHeader.Unknown = 0;
             frameHeader.Reserved = 0;
-            frameHeader.StartAddress = 0; // Set this value later when you know the correct start address
+            frameHeader.StartAddress = 0;
             frameHeader.ByteWidth = (uint)bitmap.Width;
             frameHeader.SemiByteCount = 0;
 

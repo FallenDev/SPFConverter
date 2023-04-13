@@ -113,7 +113,8 @@ namespace SPFConverter
                 var blue = 8 * (uint16 % 32);
                 var green = 8 * (uint16 / 32 % 32);
                 var red = 8 * (uint16 / 32 / 32 % 32);
-                spfPalette._colors[index] = Color.FromArgb(red, green, blue);
+                var alpha = (red == 0 && green == 0 && blue == 0) ? 0 : 255; // Alpha is #000000, so make this transparent
+                spfPalette._colors[index] = Color.FromArgb(alpha, red, green, blue);
             }
 
             return spfPalette;
