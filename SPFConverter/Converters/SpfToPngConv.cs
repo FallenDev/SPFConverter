@@ -3,7 +3,7 @@
 internal class SpfToPngConv
 {
     public SpfFileHeader _mHeader;
-    public SpfPalette _mPalette;
+    public SpfPaletteStruct _mPalette;
     private uint _mFramecount;
     private uint _mBytetotal;
     private SpfFrame[] _mFrames;
@@ -30,7 +30,7 @@ internal class SpfToPngConv
 
         // If 8bpp, extract palette
         if (spfFile.ColorFormat == 0)
-            spfFile._mPalette = SpfPalette.FromBinaryReaderBlock(binaryReader);
+            spfFile._mPalette = SpfPaletteStruct.FromBinaryReaderBlock(binaryReader);
 
         // Read frame counts
         spfFile._mFramecount = binaryReader.ReadUInt32();
@@ -86,7 +86,7 @@ public sealed class SpfFrame
     public uint ByteCount => _mHeader.ByteCount;
     public uint SemiByteCount => _mHeader.SemiByteCount;
 
-    public SpfFrame(SpfFrameHeader h, uint format, SpfPalette p)
+    public SpfFrame(SpfFrameHeader h, uint format, SpfPaletteStruct p)
     {
         _mHeader = h;
         if (ByteCount == 0U) return;

@@ -12,7 +12,8 @@ internal abstract class PngToSpfConv
         {
             Unknown1 = 0,
             Unknown2 = 1,
-            ColorFormat = 1 // Set color format to 16bpp
+            //ColorFormat = 1 // Set color format to 16bpp
+            ColorFormat = 0 // Set color format to 8bpp
         };
 
         // Convert header to bytes
@@ -20,6 +21,10 @@ internal abstract class PngToSpfConv
 
         // Write file header
         binaryWriter.Write(headerBytes);
+
+        // Write the palette
+        var spfPalette = SpfPalette.CreateFromBitmap(loadedBitmap);
+        binaryWriter.Write(spfPalette.ToByteArray());
 
         // Write the frame count uint
         binaryWriter.Write((uint)1);
@@ -29,13 +34,37 @@ internal abstract class PngToSpfConv
         binaryWriter.Write(frameHeaderBytes);
 
         // Write the bytesTotal (bitmap width & bitmap height) * 2 for 16bpp
-        var bytesTotal = (uint)(loadedBitmap.Width * loadedBitmap.Height) * 2;
-
+        var bytesTotal = (uint)(loadedBitmap.Width * loadedBitmap.Height)/* * 2*/;
         binaryWriter.Write(bytesTotal);
 
         // Write the frame data
-        var frameDataBytes = BitmapToFrameData(loadedBitmap);
+        var frameDataBytes = BitmapToFrameData(loadedBitmap, spfPalette);
         binaryWriter.Write(frameDataBytes);
+    }
+
+    private static Bitmap ConvertTo8bppIndexed(Bitmap input, SpfPalette palette)
+    {
+        var width = input.Width;
+        var height = input.Height;
+
+        var output = new Bitmap(width, height, PixelFormat.Format8bppIndexed);
+
+        output.Palette = palette.ToColorPalette();
+
+        using var graphics = Graphics.FromImage(output);
+        graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+        graphics.Clear(Color.Transparent);
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                Color pixelColor = input.GetPixel(x, y);
+                output.SetPixel(x, y, palette.GetClosestColor(pixelColor));
+            }
+        }
+
+        return output;
     }
 
     private static Bitmap ConvertTo16bppRgb555(Bitmap input)
@@ -68,16 +97,16 @@ internal abstract class PngToSpfConv
         return output;
     }
 
-    private static byte[] BitmapToFrameData(Bitmap bitmap)
+    private static byte[] BitmapToFrameData(Bitmap bitmap, SpfPalette palette)
     {
-        // Check if the input bitmap is already in 16bppRgb555 format, if not, convert it
-        if (bitmap.PixelFormat != PixelFormat.Format16bppRgb555)
+        // Check if the input bitmap is already in 8bppIndexed format, if not, convert it
+        if (bitmap.PixelFormat != PixelFormat.Format8bppIndexed)
         {
-            bitmap = ConvertTo16bppRgb555(bitmap);
+            bitmap = ConvertTo8bppIndexed(bitmap, palette);
         }
 
         var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
-        var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format16bppRgb555);
+        var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format8bppIndexed);
 
         var ptr = bitmapData.Scan0;
         var size = bitmapData.Stride * bitmap.Height;

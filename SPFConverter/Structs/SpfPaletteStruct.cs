@@ -1,6 +1,6 @@
 ﻿namespace SPFverter.Structs;
 
-public struct SpfPalette
+public struct SpfPaletteStruct
 {
     public byte[] _alpha;
     public byte[] _rgb;
@@ -9,9 +9,9 @@ public struct SpfPalette
     /// <summary>
     /// Reads 8bppIndexed Palette, and converts #00000 black to alpha channel
     /// </summary>
-    public static SpfPalette FromBinaryReaderBlock(BinaryReader br)
+    public static SpfPaletteStruct FromBinaryReaderBlock(BinaryReader br)
     {
-        SpfPalette spfPalette;
+        SpfPaletteStruct spfPalette;
         spfPalette._alpha = br.ReadBytes(512);
         spfPalette._rgb = br.ReadBytes(512);
         spfPalette._colors = new Color[256];
