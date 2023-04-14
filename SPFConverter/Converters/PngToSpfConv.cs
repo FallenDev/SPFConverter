@@ -1,6 +1,6 @@
-﻿namespace SPFverter;
+﻿namespace SPFverter.Converters;
 
-internal abstract class SpfConverter
+internal abstract class PngToSpfConv
 {
     public static void PngToSpf(string outputSpfFilePath, Bitmap loadedBitmap)
     {
@@ -12,7 +12,7 @@ internal abstract class SpfConverter
         {
             Unknown1 = 0,
             Unknown2 = 1,
-            ColorFormat = (uint)1 // Set color format to 16bpp
+            ColorFormat = 1 // Set color format to 16bpp
         };
 
         // Convert header to bytes

@@ -1,6 +1,6 @@
-﻿namespace SPFverter;
+﻿namespace SPFverter.Converters;
 
-internal class SpfFile
+internal class SpfToPngConv
 {
     public SpfFileHeader _mHeader;
     public SpfPalette _mPalette;
@@ -16,12 +16,12 @@ internal class SpfFile
     public uint ByteTotal => _mBytetotal;
 
 
-    public static SpfFile FromFile(string fileName)
+    public static SpfToPngConv FromFile(string fileName)
     {
         if (!File.Exists(fileName)) return null;
 
         var binaryReader = new BinaryReader(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read));
-        var spfFile = new SpfFile
+        var spfFile = new SpfToPngConv
         {
             _mFileName = fileName,
             _mHeader = SpfFileHeader.FromBinaryReaderBlock(binaryReader)

@@ -1,3 +1,5 @@
+using SPFverter.Converters;
+
 namespace SPFverter;
 
 public partial class Form1 : Form
@@ -32,7 +34,7 @@ public partial class Form1 : Form
                 saveFileDialog.Filter = "PNG Files|*.png";
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    var spfFile = SpfFile.FromFile(openFileDialog.FileName);
+                    var spfFile = SpfToPngConv.FromFile(openFileDialog.FileName);
                         
                     // ToDo: Create loop here to save multiple frames
                     spfFile.Frames[0].FrameBitmap.Save(saveFileDialog.FileName, ImageFormat.Png);
@@ -56,7 +58,7 @@ public partial class Form1 : Form
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     _loadedBitmap = new Bitmap(openFileDialog.FileName);
-                    SpfConverter.PngToSpf(saveFileDialog.FileName, _loadedBitmap);
+                    PngToSpfConv.PngToSpf(saveFileDialog.FileName, _loadedBitmap);
                 }
             }
             catch (Exception ex)

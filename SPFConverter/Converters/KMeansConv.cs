@@ -1,4 +1,4 @@
-﻿namespace SPFverter;
+﻿namespace SPFverter.Converters;
 
 public class KMeans<T>
 {
