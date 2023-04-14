@@ -6,6 +6,9 @@ public struct SpfPalette
     public byte[] _rgb;
     public Color[] _colors;
 
+    /// <summary>
+    /// Reads 8bppIndexed Palette, and converts #00000 black to alpha channel
+    /// </summary>
     public static SpfPalette FromBinaryReaderBlock(BinaryReader br)
     {
         SpfPalette spfPalette;

@@ -15,26 +15,34 @@ internal class SpfToPngConv
     public uint FrameCount => _mFramecount;
     public uint ByteTotal => _mBytetotal;
 
-
     public static SpfToPngConv FromFile(string fileName)
     {
         if (!File.Exists(fileName)) return null;
 
         var binaryReader = new BinaryReader(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read));
+
+        // Create and Read file header
         var spfFile = new SpfToPngConv
         {
             _mFileName = fileName,
             _mHeader = SpfFileHeader.FromBinaryReaderBlock(binaryReader)
         };
 
-        if (spfFile.ColorFormat == 0U)
+        // If 8bpp, extract palette
+        if (spfFile.ColorFormat == 0)
             spfFile._mPalette = SpfPalette.FromBinaryReaderBlock(binaryReader);
 
+        // Read frame counts
         spfFile._mFramecount = binaryReader.ReadUInt32();
         spfFile._mFrames = new SpfFrame[(int)(nint)spfFile.FrameCount];
 
+        // Read frame header
         spfFile.FrameHeadersFromReader(binaryReader);
+
+        // Read total bytes
         spfFile._mBytetotal = binaryReader.ReadUInt32();
+
+        // Read frame data
         spfFile.FrameDataFromReader(binaryReader);
         binaryReader.Close();
 

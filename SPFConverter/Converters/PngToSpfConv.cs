@@ -44,9 +44,27 @@ internal abstract class PngToSpfConv
         var height = input.Height;
 
         var output = new Bitmap(width, height, PixelFormat.Format16bppRgb555);
+    
         using var graphics = Graphics.FromImage(output);
-        graphics.DrawImage(input, 0, 0, width, height);
+        graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+        graphics.Clear(Color.Transparent);
 
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                Color pixelColor = input.GetPixel(x, y);
+            
+                // Set the alpha channel to black (#000000)
+                if (pixelColor.A < 255)
+                {
+                    pixelColor = Color.FromArgb(0, 0, 0);
+                }
+            
+                output.SetPixel(x, y, pixelColor);
+            }
+        }
+    
         return output;
     }
 

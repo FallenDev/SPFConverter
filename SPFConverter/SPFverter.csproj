@@ -8,4 +8,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="nQuant.Master" Version="1.2.6" />
+  </ItemGroup>
+
 </Project>
