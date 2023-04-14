@@ -1,4 +1,4 @@
-﻿namespace SPFConverter
+﻿namespace SPFverter
 {
     partial class Form1
     {

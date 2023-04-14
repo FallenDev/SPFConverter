@@ -1,70 +1,67 @@
-using System.Drawing.Imaging;
+namespace SPFverter;
 
-namespace SPFConverter
+public partial class Form1 : Form
 {
-    public partial class Form1 : Form
+    private OpenFileDialog openFileDialog;
+    private SaveFileDialog saveFileDialog;
+    private Bitmap _loadedBitmap;
+
+    public Form1()
     {
-        private OpenFileDialog openFileDialog;
-        private SaveFileDialog saveFileDialog;
-        private Bitmap _loadedBitmap;
+        InitializeComponent();
 
-        public Form1()
+        openFileDialog = new OpenFileDialog();
+        saveFileDialog = new SaveFileDialog();
+
+        var btnSpfToPng = new Button { Text = "SPF to PNG", AutoSize = true, Location = new Point(30, 15), BackColor = Color.DodgerBlue, ForeColor = Color.White};
+        btnSpfToPng.Click += BtnSpfToPng_Click;
+        Controls.Add(btnSpfToPng);
+
+        var btnPngToSpf = new Button { Text = "PNG to SPF", AutoSize = true, Location = new Point(30, 60), BackColor = Color.DodgerBlue, ForeColor = Color.White};
+        btnPngToSpf.Click += BtnPngToSpf_Click;
+        Controls.Add(btnPngToSpf);
+    }
+
+    private void BtnSpfToPng_Click(object sender, EventArgs e)
+    {
+        openFileDialog.Filter = "SPF Files|*.spf";
+        if (openFileDialog.ShowDialog() == DialogResult.OK)
         {
-            InitializeComponent();
-
-            openFileDialog = new OpenFileDialog();
-            saveFileDialog = new SaveFileDialog();
-
-            var btnSpfToPng = new Button { Text = "SPF to PNG", AutoSize = true, Location = new Point(30, 15), BackColor = Color.DodgerBlue, ForeColor = Color.White};
-            btnSpfToPng.Click += BtnSpfToPng_Click;
-            Controls.Add(btnSpfToPng);
-
-            var btnPngToSpf = new Button { Text = "PNG to SPF", AutoSize = true, Location = new Point(30, 60), BackColor = Color.DodgerBlue, ForeColor = Color.White};
-            btnPngToSpf.Click += BtnPngToSpf_Click;
-            Controls.Add(btnPngToSpf);
-        }
-
-        private void BtnSpfToPng_Click(object sender, EventArgs e)
-        {
-            openFileDialog.Filter = "SPF Files|*.spf";
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            try
             {
-                try
+                saveFileDialog.Filter = "PNG Files|*.png";
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    saveFileDialog.Filter = "PNG Files|*.png";
-                    if (saveFileDialog.ShowDialog() == DialogResult.OK)
-                    {
-                        var spfFile = SpfFile.FromFile(openFileDialog.FileName);
+                    var spfFile = SpfFile.FromFile(openFileDialog.FileName);
                         
-                        // ToDo: Create loop here to save multiple frames
-                        spfFile.Frames[0].FrameBitmap.Save(saveFileDialog.FileName, ImageFormat.Png);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error converting SPF to PNG: {ex.Message}");
+                    // ToDo: Create loop here to save multiple frames
+                    spfFile.Frames[0].FrameBitmap.Save(saveFileDialog.FileName, ImageFormat.Png);
                 }
             }
-        }
-
-        private void BtnPngToSpf_Click(object sender, EventArgs e)
-        {
-            openFileDialog.Filter = "PNG Files|*.png";
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            catch (Exception ex)
             {
-                try
+                MessageBox.Show($"Error converting SPF to PNG: {ex.Message}");
+            }
+        }
+    }
+
+    private void BtnPngToSpf_Click(object sender, EventArgs e)
+    {
+        openFileDialog.Filter = "PNG Files|*.png";
+        if (openFileDialog.ShowDialog() == DialogResult.OK)
+        {
+            try
+            {
+                saveFileDialog.Filter = "SPF Files|*.spf";
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    saveFileDialog.Filter = "SPF Files|*.spf";
-                    if (saveFileDialog.ShowDialog() == DialogResult.OK)
-                    {
-                        _loadedBitmap = new Bitmap(openFileDialog.FileName);
-                        SpfConverter.PngToSpf(saveFileDialog.FileName, _loadedBitmap);
-                    }
+                    _loadedBitmap = new Bitmap(openFileDialog.FileName);
+                    SpfConverter.PngToSpf(saveFileDialog.FileName, _loadedBitmap);
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error converting PNG to SPF: {ex.Message} {ex.StackTrace}");
-                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error converting PNG to SPF: {ex.Message} {ex.StackTrace}");
             }
         }
     }
