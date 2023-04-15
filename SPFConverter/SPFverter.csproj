@@ -6,10 +6,13 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="nQuant.Master" Version="1.2.6" />
+    <Reference Include="nquant.NET">
+      <HintPath>..\..\nquant.NET\nquant.NET\bin\Release\net7.0\nquant.NET.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

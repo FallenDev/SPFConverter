@@ -1,81 +1,81 @@
-﻿using System.Drawing;
-using System.Drawing.Imaging;
-using System.Linq;
+﻿using nquant.NET;
 
-namespace SPFverter.Converters
+public class SpfPalette
 {
-    public class SpfPalette
+    public byte[] _alpha;
+    public byte[] _rgb;
+    public Color[] _colors;
+
+    public SpfPalette(int colorCount)
     {
-        private Color[] _colors;
+        _alpha = new byte[colorCount];
+        _rgb = new byte[colorCount * 3];
+        _colors = new Color[colorCount];
+    }
 
-        private SpfPalette()
+    public static SpfPalette FromBitmap(Bitmap bitmap)
+    {
+        // Extract the palette from the input bitmap
+        var colorCount = 256;
+        var spfPalette = new SpfPalette(colorCount);
+
+        // We'll use a quantizer to reduce the number of colors in the input image
+        var quantizer = new WuQuantizer();
+
+        using (var quantizedBitmap = quantizer.QuantizeImage(bitmap, 10, 70))
         {
-        }
-
-        public static SpfPalette CreateFromBitmap(Bitmap bitmap)
-        {
-            SpfPalette spfPalette = new SpfPalette();
-            ColorPalette colorPalette = bitmap.Palette;
-            spfPalette._colors = colorPalette.Entries;
-
-            return spfPalette;
-        }
-
-        public ColorPalette ToColorPalette()
-        {
-            using (var bmp = new Bitmap(1, 1, PixelFormat.Format8bppIndexed))
+            // Copy colors from the quantized bitmap's palette
+            var colorPalette = quantizedBitmap.Palette;
+            for (var i = 0; i < colorCount; i++)
             {
-                ColorPalette colorPalette = bmp.Palette;
-
-                for (int i = 0; i < _colors.Length; i++)
-                {
-                    colorPalette.Entries[i] = _colors[i];
-                }
-
-                return colorPalette;
+                var color = colorPalette.Entries[i];
+                spfPalette._colors[i] = color;
+                spfPalette._alpha[i] = (byte)color.A;
+                spfPalette._rgb[i * 3] = (byte)color.R;
+                spfPalette._rgb[i * 3 + 1] = (byte)color.G;
+                spfPalette._rgb[i * 3 + 2] = (byte)color.B;
             }
         }
 
-        public byte[] ToByteArray()
-        {
-            var bytes = new byte[_colors.Length * 4];
+        return spfPalette;
+    }
 
-            for (int i = 0; i < _colors.Length; i++)
+    public int FindNearestColorIndex(Color color)
+    {
+        var closestIndex = 0;
+        var closestDistance = int.MaxValue;
+
+        for (var i = 0; i < _colors.Length; i++)
+        {
+            var paletteColor = _colors[i];
+            var distance = ColorDistance(color, paletteColor);
+
+            if (distance < closestDistance)
             {
-                bytes[i * 4] = _colors[i].A;
-                bytes[i * 4 + 1] = _colors[i].R;
-                bytes[i * 4 + 2] = _colors[i].G;
-                bytes[i * 4 + 3] = _colors[i].B;
+                closestDistance = distance;
+                closestIndex = i;
             }
-
-            return bytes;
         }
 
-        public Color GetClosestColor(Color color)
-        {
-            int minDistance = int.MaxValue;
-            Color closestColor = Color.Black;
-            for (int i = 0; i < _colors.Length; i++)
-            {
-                int distance = ColorDistance(color, _colors[i]);
-                if (distance < minDistance)
-                {
-                    minDistance = distance;
-                    closestColor = _colors[i];
-                }
-            }
+        return closestIndex;
+    }
 
-            return closestColor;
-        }
+    private static int ColorDistance(Color a, Color b)
+    {
+        var dr = a.R - b.R;
+        var dg = a.G - b.G;
+        var db = a.B - b.B;
+        var da = a.A - b.A;
 
-        private int ColorDistance(Color c1, Color c2)
-        {
-            int rDiff = c1.R - c2.R;
-            int gDiff = c1.G - c2.G;
-            int bDiff = c1.B - c2.B;
-            int aDiff = c1.A - c2.A;
+        return dr * dr + dg * dg + db * db + da * da;
+    }
 
-            return rDiff * rDiff + gDiff * gDiff + bDiff * bDiff + aDiff * aDiff;
-        }
+    public byte[] ToArray()
+    {
+        var paletteBytes = new byte[_alpha.Length + _rgb.Length];
+        Array.Copy(_alpha, 0, paletteBytes, 0, _alpha.Length);
+        Array.Copy(_rgb, 0, paletteBytes, _alpha.Length, _rgb.Length);
+
+        return paletteBytes;
     }
 }

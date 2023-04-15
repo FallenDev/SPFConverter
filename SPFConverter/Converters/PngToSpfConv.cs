@@ -23,8 +23,8 @@ internal abstract class PngToSpfConv
         binaryWriter.Write(headerBytes);
 
         // Write the palette
-        var spfPalette = SpfPalette.CreateFromBitmap(loadedBitmap);
-        binaryWriter.Write(spfPalette.ToByteArray());
+        var spfPalette = SpfPalette.FromBitmap(loadedBitmap);
+        binaryWriter.Write(spfPalette.ToArray());
 
         // Write the frame count uint
         binaryWriter.Write((uint)1);
@@ -38,34 +38,66 @@ internal abstract class PngToSpfConv
         binaryWriter.Write(bytesTotal);
 
         // Write the frame data
-        var frameDataBytes = BitmapToFrameData(loadedBitmap, spfPalette);
+        var frameDataBytes = BitmapToFrameData(loadedBitmap);
         binaryWriter.Write(frameDataBytes);
     }
 
-    private static Bitmap ConvertTo8bppIndexed(Bitmap input, SpfPalette palette)
+    private static Bitmap ConvertTo8bppIndexed(Bitmap input)
     {
-        var width = input.Width;
-        var height = input.Height;
+        int width = input.Width;
+        int height = input.Height;
 
-        var output = new Bitmap(width, height, PixelFormat.Format8bppIndexed);
+        // Create a temporary 32bppArgb bitmap
+        using Bitmap tempBitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
 
-        output.Palette = palette.ToColorPalette();
-
-        using var graphics = Graphics.FromImage(output);
-        graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-        graphics.Clear(Color.Transparent);
-
-        for (int y = 0; y < height; y++)
+        // Draw the input image on the temporary bitmap
+        using (Graphics graphics = Graphics.FromImage(tempBitmap))
         {
-            for (int x = 0; x < width; x++)
+            graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+            graphics.DrawImage(input, 0, 0, width, height);
+        }
+
+        // Create the output 8bppIndexed bitmap
+        Bitmap output = new Bitmap(width, height, PixelFormat.Format8bppIndexed);
+
+        // Get the palette from the input image and find the nearest color index for each pixel
+        SpfPalette spfPalette = SpfPalette.FromBitmap(input);
+        ColorPalette colorPalette = output.Palette;
+        Array.Copy(spfPalette._colors, colorPalette.Entries, spfPalette._colors.Length);
+        output.Palette = colorPalette;
+
+        BitmapData outputData = output.LockBits(new Rectangle(0, 0, width, height),
+            ImageLockMode.WriteOnly, PixelFormat.Format8bppIndexed);
+        BitmapData tempData = tempBitmap.LockBits(new Rectangle(0, 0, width, height),
+            ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+
+        unsafe
+        {
+            byte* outputPtr = (byte*)outputData.Scan0;
+            byte* tempPtr = (byte*)tempData.Scan0;
+
+            for (int y = 0; y < height; y++)
             {
-                Color pixelColor = input.GetPixel(x, y);
-                output.SetPixel(x, y, palette.GetClosestColor(pixelColor));
+                for (int x = 0; x < width; x++)
+                {
+                    Color pixelColor = Color.FromArgb(*(tempPtr + 3), *(tempPtr + 2), *(tempPtr + 1), *tempPtr);
+                    int nearestIndex = spfPalette.FindNearestColorIndex(pixelColor);
+                    *(outputPtr + x) = (byte)nearestIndex;
+
+                    tempPtr += 4;
+                }
+
+                outputPtr += outputData.Stride;
+                tempPtr += tempData.Stride - width * 4;
             }
         }
 
+        output.UnlockBits(outputData);
+        tempBitmap.UnlockBits(tempData);
+
         return output;
     }
+
 
     private static Bitmap ConvertTo16bppRgb555(Bitmap input)
     {
@@ -97,12 +129,12 @@ internal abstract class PngToSpfConv
         return output;
     }
 
-    private static byte[] BitmapToFrameData(Bitmap bitmap, SpfPalette palette)
+    private static byte[] BitmapToFrameData(Bitmap bitmap)
     {
         // Check if the input bitmap is already in 8bppIndexed format, if not, convert it
         if (bitmap.PixelFormat != PixelFormat.Format8bppIndexed)
         {
-            bitmap = ConvertTo8bppIndexed(bitmap, palette);
+            bitmap = ConvertTo8bppIndexed(bitmap);
         }
 
         var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
