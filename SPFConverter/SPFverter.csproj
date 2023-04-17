@@ -10,9 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="nquant.NET">
-      <HintPath>..\..\nquant.NET\nquant.NET\bin\Release\net7.0\nquant.NET.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\..\nQuant.cs-core\nQuant.Master\nQuant.Master.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="System.Diagnostics" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,11 @@
-﻿namespace SPFverter.Converters;
+﻿using System.Security.Cryptography.X509Certificates;
+
+namespace SPFverter.Converters;
 
 internal abstract class PngToSpfConv
 {
+    public static SpfPalette? SpfPalette;
+
     public static void PngToSpf(string outputSpfFilePath, Bitmap loadedBitmap)
     {
         using var fileStream = new FileStream(outputSpfFilePath, FileMode.Create);
@@ -23,8 +27,16 @@ internal abstract class PngToSpfConv
         binaryWriter.Write(headerBytes);
 
         // Write the palette
-        var spfPalette = SpfPalette.FromBitmap(loadedBitmap);
-        binaryWriter.Write(spfPalette.ToArray());
+        SpfPalette = SpfPalette.FromBitmap(loadedBitmap);
+
+        // Print the SpfPalette
+        Debug.WriteLine("SPF Palette:");
+        for (int i = 0; i < SpfPalette._colors.Length; i++)
+        {
+            Debug.WriteLine($"Color {i}: {SpfPalette._colors[i]}");
+        }
+
+        binaryWriter.Write(SpfPalette.ToArray());
 
         // Write the frame count uint
         binaryWriter.Write((uint)1);
@@ -61,9 +73,9 @@ internal abstract class PngToSpfConv
         Bitmap output = new Bitmap(width, height, PixelFormat.Format8bppIndexed);
 
         // Get the palette from the input image and find the nearest color index for each pixel
-        SpfPalette spfPalette = SpfPalette.FromBitmap(input);
+        //SpfPalette spfPalette = SpfPalette.FromBitmap(input);
         ColorPalette colorPalette = output.Palette;
-        Array.Copy(spfPalette._colors, colorPalette.Entries, spfPalette._colors.Length);
+        Array.Copy(SpfPalette._colors, colorPalette.Entries, SpfPalette._colors.Length);
         output.Palette = colorPalette;
 
         BitmapData outputData = output.LockBits(new Rectangle(0, 0, width, height),
@@ -81,7 +93,7 @@ internal abstract class PngToSpfConv
                 for (int x = 0; x < width; x++)
                 {
                     Color pixelColor = Color.FromArgb(*(tempPtr + 3), *(tempPtr + 2), *(tempPtr + 1), *tempPtr);
-                    int nearestIndex = spfPalette.FindNearestColorIndex(pixelColor);
+                    int nearestIndex = SpfPalette.FindNearestColorIndex(pixelColor);
                     *(outputPtr + x) = (byte)nearestIndex;
 
                     tempPtr += 4;
