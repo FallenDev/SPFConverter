@@ -73,9 +73,19 @@ internal abstract class PngToSpfConv
         Bitmap output = new Bitmap(width, height, PixelFormat.Format8bppIndexed);
 
         // Get the palette from the input image and find the nearest color index for each pixel
-        //SpfPalette spfPalette = SpfPalette.FromBitmap(input);
         ColorPalette colorPalette = output.Palette;
-        Array.Copy(SpfPalette._colors, colorPalette.Entries, SpfPalette._colors.Length);
+
+        // Copy colors from the SpfPalette._argb array
+        for (int i = 0; i < 256; i++)
+        {
+            colorPalette.Entries[i] = Color.FromArgb(
+                SpfPalette._argb[i * 4],
+                SpfPalette._argb[i * 4 + 1],
+                SpfPalette._argb[i * 4 + 2],
+                SpfPalette._argb[i * 4 + 3]
+            );
+        }
+
         output.Palette = colorPalette;
 
         BitmapData outputData = output.LockBits(new Rectangle(0, 0, width, height),
@@ -109,38 +119,7 @@ internal abstract class PngToSpfConv
 
         return output;
     }
-
-
-    private static Bitmap ConvertTo16bppRgb555(Bitmap input)
-    {
-        var width = input.Width;
-        var height = input.Height;
-
-        var output = new Bitmap(width, height, PixelFormat.Format16bppRgb555);
     
-        using var graphics = Graphics.FromImage(output);
-        graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-        graphics.Clear(Color.Transparent);
-
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < width; x++)
-            {
-                Color pixelColor = input.GetPixel(x, y);
-            
-                // Set the alpha channel to black (#000000)
-                if (pixelColor.A < 255)
-                {
-                    pixelColor = Color.FromArgb(0, 0, 0);
-                }
-            
-                output.SetPixel(x, y, pixelColor);
-            }
-        }
-    
-        return output;
-    }
-
     private static byte[] BitmapToFrameData(Bitmap bitmap)
     {
         // Check if the input bitmap is already in 8bppIndexed format, if not, convert it

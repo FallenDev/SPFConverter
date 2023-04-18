@@ -2,15 +2,11 @@
 public class SpfPalette
 {
     public byte[] _argb;
-    public byte[] _alpha;
-    public byte[] _rgb;
     public Color[] _colors;
 
     public SpfPalette(int colorCount)
     {
         _argb = new byte[colorCount * 4];
-        //_alpha = new byte[colorCount];
-        //_rgb = new byte[colorCount * 3];
         _colors = new Color[colorCount];
     }
 
@@ -34,16 +30,6 @@ public class SpfPalette
         {
             Debug.WriteLine($"Color {i}: {colorPalette.Entries[i]}");
         }
-
-        //for (var i = 0; i < colorCount; i++)
-        //{
-        //    var color = colorPalette.Entries[i];
-        //    spfPalette._colors[i] = color;
-        //    spfPalette._alpha[i] = (byte)color.A;
-        //    spfPalette._rgb[i * 3] = (byte)color.R;
-        //    spfPalette._rgb[i * 3 + 1] = (byte)color.G;
-        //    spfPalette._rgb[i * 3 + 2] = (byte)color.B;
-        //}
 
         for (var i = 0; i < colorCount; i++)
         {
@@ -89,15 +75,6 @@ public class SpfPalette
 
         return dr * dr + dg * dg + db * db + da * da;
     }
-
-    //public byte[] ToArray()
-    //{
-    //    var paletteBytes = new byte[_alpha.Length + _rgb.Length];
-    //    Array.Copy(_alpha, 0, paletteBytes, 0, _alpha.Length);
-    //    Array.Copy(_rgb, 0, paletteBytes, _alpha.Length, _rgb.Length);
-
-    //    return paletteBytes;
-    //}
 
     public byte[] ToArray()
     {
