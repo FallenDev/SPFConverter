@@ -29,13 +29,6 @@ internal abstract class PngToSpfConv
         // Write the palette
         SpfPalette = SpfPalette.FromBitmap(loadedBitmap);
 
-        // Print the SpfPalette
-        Debug.WriteLine("SPF Palette:");
-        for (int i = 0; i < SpfPalette._colors.Length; i++)
-        {
-            Debug.WriteLine($"Color {i}: {SpfPalette._colors[i]}");
-        }
-
         binaryWriter.Write(SpfPalette.ToArray());
 
         // Write the frame count uint
@@ -54,80 +47,8 @@ internal abstract class PngToSpfConv
         binaryWriter.Write(frameDataBytes);
     }
 
-    private static Bitmap ConvertTo8bppIndexed(Bitmap input)
-    {
-        int width = input.Width;
-        int height = input.Height;
-
-        // Create a temporary 32bppArgb bitmap
-        using Bitmap tempBitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
-
-        // Draw the input image on the temporary bitmap
-        using (Graphics graphics = Graphics.FromImage(tempBitmap))
-        {
-            graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-            graphics.DrawImage(input, 0, 0, width, height);
-        }
-
-        // Create the output 8bppIndexed bitmap
-        Bitmap output = new Bitmap(width, height, PixelFormat.Format8bppIndexed);
-
-        // Get the palette from the input image and find the nearest color index for each pixel
-        ColorPalette colorPalette = output.Palette;
-
-        // Copy colors from the SpfPalette._argb array
-        for (int i = 0; i < 256; i++)
-        {
-            colorPalette.Entries[i] = Color.FromArgb(
-                SpfPalette._argb[i * 4],
-                SpfPalette._argb[i * 4 + 1],
-                SpfPalette._argb[i * 4 + 2],
-                SpfPalette._argb[i * 4 + 3]
-            );
-        }
-
-        output.Palette = colorPalette;
-
-        BitmapData outputData = output.LockBits(new Rectangle(0, 0, width, height),
-            ImageLockMode.WriteOnly, PixelFormat.Format8bppIndexed);
-        BitmapData tempData = tempBitmap.LockBits(new Rectangle(0, 0, width, height),
-            ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-
-        unsafe
-        {
-            byte* outputPtr = (byte*)outputData.Scan0;
-            byte* tempPtr = (byte*)tempData.Scan0;
-
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    Color pixelColor = Color.FromArgb(*(tempPtr + 3), *(tempPtr + 2), *(tempPtr + 1), *tempPtr);
-                    int nearestIndex = SpfPalette.FindNearestColorIndex(pixelColor);
-                    *(outputPtr + x) = (byte)nearestIndex;
-
-                    tempPtr += 4;
-                }
-
-                outputPtr += outputData.Stride;
-                tempPtr += tempData.Stride - width * 4;
-            }
-        }
-
-        output.UnlockBits(outputData);
-        tempBitmap.UnlockBits(tempData);
-
-        return output;
-    }
-    
     private static byte[] BitmapToFrameData(Bitmap bitmap)
     {
-        // Check if the input bitmap is already in 8bppIndexed format, if not, convert it
-        if (bitmap.PixelFormat != PixelFormat.Format8bppIndexed)
-        {
-            bitmap = ConvertTo8bppIndexed(bitmap);
-        }
-
         var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
         var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format8bppIndexed);
 

@@ -12,6 +12,13 @@ public class SpfPalette
 
     public static SpfPalette FromBitmap(Bitmap bitmap)
     {
+        // Print the loaded bitmap
+        Debug.WriteLine("Loaded Bitmap:");
+        for (int i = 0; i < bitmap.Palette.Entries.Length; i++)
+        {
+            Debug.WriteLine($"Color {i}: {bitmap.Palette.Entries[i]}");
+        }
+
         // Extract the palette from the input bitmap
         var colorCount = 256;
         var spfPalette = new SpfPalette(colorCount);
@@ -23,13 +30,24 @@ public class SpfPalette
         // Copy colors from the quantized bitmap's palette
         var colorPalette = quantizedBitmap.Palette;
 
-        // Do the nQuant.Master conversion, then:
-        // Print the indexed image's palette
-        Debug.WriteLine("Indexed Image Palette:");
+        // Print the quantized palette
+        //Debug.WriteLine("Quantized Palette:");
+        //for (int i = 0; i < colorPalette.Entries.Length; i++)
+        //{
+        //    Debug.WriteLine($"Color {i}: {colorPalette.Entries[i]}");
+        //}
+        Debug.WriteLine("Quantized Palette:");
+        List<(int, int, int)> rgbPalette = new List<(int, int, int)>();
+
         for (int i = 0; i < colorPalette.Entries.Length; i++)
         {
-            Debug.WriteLine($"Color {i}: {colorPalette.Entries[i]}");
+            Color color = colorPalette.Entries[i];
+            rgbPalette.Add((color.R, color.G, color.B));
+            Debug.WriteLine($"Color {i}: {color}");
         }
+
+        Debug.WriteLine("RGB Palette: " + string.Join(", ", rgbPalette));
+
 
         for (var i = 0; i < colorCount; i++)
         {
@@ -38,42 +56,12 @@ public class SpfPalette
 
             // Use a single array to store ARGB values for each color
             spfPalette._argb[i * 4] = (byte)color.A;
-            spfPalette._argb[i * 4 + 1] = (byte)color.R;
-            spfPalette._argb[i * 4 + 2] = (byte)color.G;
-            spfPalette._argb[i * 4 + 3] = (byte)color.B;
+            spfPalette._argb[i * 4 + 1] = (byte)color.G;
+            spfPalette._argb[i * 4 + 2] = (byte)color.B;
+            spfPalette._argb[i * 4 + 3] = (byte)color.R;
         }
 
         return spfPalette;
-    }
-
-    public int FindNearestColorIndex(Color color)
-    {
-        var closestIndex = 0;
-        var closestDistance = int.MaxValue;
-
-        for (var i = 0; i < _colors.Length; i++)
-        {
-            var paletteColor = _colors[i];
-            var distance = ColorDistance(color, paletteColor);
-
-            if (distance < closestDistance)
-            {
-                closestDistance = distance;
-                closestIndex = i;
-            }
-        }
-
-        return closestIndex;
-    }
-
-    private static int ColorDistance(Color a, Color b)
-    {
-        var dr = a.R - b.R;
-        var dg = a.G - b.G;
-        var db = a.B - b.B;
-        var da = a.A - b.A;
-
-        return dr * dr + dg * dg + db * db + da * da;
     }
 
     public byte[] ToArray()
