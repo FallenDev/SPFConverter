@@ -13,11 +13,11 @@ public class SpfPalette
     public static SpfPalette FromBitmap(Bitmap bitmap)
     {
         // Print the loaded bitmap
-        Debug.WriteLine("Loaded Bitmap:");
-        for (int i = 0; i < bitmap.Palette.Entries.Length; i++)
-        {
-            Debug.WriteLine($"Color {i}: {bitmap.Palette.Entries[i]}");
-        }
+        //Debug.WriteLine("Loaded Bitmap:");
+        //for (int i = 0; i < bitmap.Palette.Entries.Length; i++)
+        //{
+        //    Debug.WriteLine($"Color {i}: {bitmap.Palette.Entries[i]}");
+        //}
 
         // Extract the palette from the input bitmap
         var colorCount = 256;
@@ -36,18 +36,6 @@ public class SpfPalette
         //{
         //    Debug.WriteLine($"Color {i}: {colorPalette.Entries[i]}");
         //}
-        Debug.WriteLine("Quantized Palette:");
-        List<(int, int, int)> rgbPalette = new List<(int, int, int)>();
-
-        for (int i = 0; i < colorPalette.Entries.Length; i++)
-        {
-            Color color = colorPalette.Entries[i];
-            rgbPalette.Add((color.R, color.G, color.B));
-            Debug.WriteLine($"Color {i}: {color}");
-        }
-
-        Debug.WriteLine("RGB Palette: " + string.Join(", ", rgbPalette));
-
 
         for (var i = 0; i < colorCount; i++)
         {
@@ -56,9 +44,9 @@ public class SpfPalette
 
             // Use a single array to store ARGB values for each color
             spfPalette._argb[i * 4] = (byte)color.A;
-            spfPalette._argb[i * 4 + 1] = (byte)color.G;
-            spfPalette._argb[i * 4 + 2] = (byte)color.B;
-            spfPalette._argb[i * 4 + 3] = (byte)color.R;
+            spfPalette._argb[i * 4 + 1] = (byte)color.R;
+            spfPalette._argb[i * 4 + 2] = (byte)color.G;
+            spfPalette._argb[i * 4 + 3] = (byte)color.B;
         }
 
         return spfPalette;
