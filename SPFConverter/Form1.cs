@@ -57,8 +57,7 @@ public partial class Form1 : Form
                 saveFileDialog.Filter = "SPF Files|*.spf";
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    _loadedBitmap = new Bitmap(openFileDialog.FileName);
-                    PngToSpfConv.PngToSpf(saveFileDialog.FileName, _loadedBitmap);
+                    PngToSpfConv.PngToSpf(saveFileDialog.FileName, openFileDialog.FileName);
                 }
             }
             catch (Exception ex)

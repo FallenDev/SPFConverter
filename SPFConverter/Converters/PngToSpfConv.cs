@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography.X509Certificates;
+﻿using static SpfPalette;
 
 namespace SPFverter.Converters;
 
@@ -6,17 +6,22 @@ internal abstract class PngToSpfConv
 {
     public static SpfPalette? SpfPalette;
 
-    public static void PngToSpf(string outputSpfFilePath, Bitmap loadedBitmap)
+    public static void PngToSpf(string outputSpfFilePath, string inputPngFilePath)
     {
+        // Initiate SPF write
         using var fileStream = new FileStream(outputSpfFilePath, FileMode.Create);
         using var binaryWriter = new BinaryWriter(fileStream);
+        
+        Bitmap image = BitmapLoader.LoadBitmap(inputPngFilePath);
+        ColorPalette palette = image.Palette;
+        SpfPaletteGen spfPalette = SpfPalette.FromBitmap(palette);
+        byte[] spfPaletteByteArray = SpfPaletteToByteArray(spfPalette);
 
         // Create header
         var header = new SpfFileHeader
         {
             Unknown1 = 0,
             Unknown2 = 1,
-            //ColorFormat = 1 // Set color format to 16bpp
             ColorFormat = 0 // Set color format to 8bpp
         };
 
@@ -27,33 +32,32 @@ internal abstract class PngToSpfConv
         binaryWriter.Write(headerBytes);
 
         // Write the palette
-        SpfPalette = SpfPalette.FromBitmap(loadedBitmap);
-
-        binaryWriter.Write(SpfPalette.ToArray());
+        //SpfPalette = SpfPalette.FromBitmap(image.Palette);
+        binaryWriter.Write(spfPaletteByteArray);
 
         // Write the frame count uint
         binaryWriter.Write((uint)1);
 
         // Write the frame header
-        var frameHeaderBytes = SpfFrameHeaderToBytes(loadedBitmap);
+        var frameHeaderBytes = SpfFrameHeaderToBytes(image);
         binaryWriter.Write(frameHeaderBytes);
 
         // Write the bytesTotal (bitmap width & bitmap height) * 2 for 16bpp
-        var bytesTotal = (uint)(loadedBitmap.Width * loadedBitmap.Height)/* * 2*/;
+        var bytesTotal = (uint)(image.Width * image.Height)/* * 2*/;
         binaryWriter.Write(bytesTotal);
 
         // Write the frame data
-        var frameDataBytes = BitmapToFrameData(loadedBitmap);
+        var frameDataBytes = BitmapToFrameData(image);
         binaryWriter.Write(frameDataBytes);
     }
-
+    
     private static byte[] BitmapToFrameData(Bitmap bitmap)
     {
         var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
         var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format8bppIndexed);
 
         var ptr = bitmapData.Scan0;
-        var size = bitmapData.Stride * bitmap.Height;
+        var size = Math.Abs(bitmapData.Stride) * bitmap.Height;
         var frameData = new byte[size];
         Marshal.Copy(ptr, frameData, 0, size);
 
