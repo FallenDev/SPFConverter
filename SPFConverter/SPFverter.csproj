@@ -10,10 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\nQuant.cs-core\nQuant.Master\nQuant.Master.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Using Include="System.Diagnostics" />
   </ItemGroup>
 
