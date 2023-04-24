@@ -7,7 +7,7 @@ public struct SpfPaletteStruct
     public Color[] _colors;
 
     /// <summary>
-    /// Reads 8bppIndexed Palette, and converts #00000 black to alpha channel
+    /// Reads SPF Image and converts to Palette
     /// </summary>
     public static SpfPaletteStruct FromBinaryReaderBlock(BinaryReader br)
     {
@@ -22,7 +22,10 @@ public struct SpfPaletteStruct
             var blue = 8 * (uint16 % 32);
             var green = 8 * (uint16 / 32 % 32);
             var red = 8 * (uint16 / 32 / 32 % 32);
-            var alpha = (red == 0 && green == 0 && blue == 0) ? 0 : 255; // Alpha is #000000, so make this transparent
+            
+            // Use the alpha value from the _alpha array
+            var alpha = spfPalette._alpha[2 * index];
+            
             spfPalette._colors[index] = Color.FromArgb(alpha, red, green, blue);
         }
 

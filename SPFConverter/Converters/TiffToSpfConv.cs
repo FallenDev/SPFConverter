@@ -2,38 +2,34 @@
 
 namespace SPFverter.Converters;
 
-internal abstract class PngToSpfConv
+internal abstract class TiffToSpfConv
 {
-    public static SpfPalette? SpfPalette;
-
-    public static void PngToSpf(string outputSpfFilePath, string inputPngFilePath)
+    public static void TiffToSpf(string outputSpfFilePath, string inputTiffFilePath)
     {
         // Initiate SPF write
         using var fileStream = new FileStream(outputSpfFilePath, FileMode.Create);
         using var binaryWriter = new BinaryWriter(fileStream);
-        
-        Bitmap image = BitmapLoader.LoadBitmap(inputPngFilePath);
-        ColorPalette palette = image.Palette;
-        SpfPaletteGen spfPalette = SpfPalette.FromBitmap(palette);
-        byte[] spfPaletteByteArray = SpfPaletteToByteArray(spfPalette);
+        //var image = BitmapLoader.LoadBitmap(inputTiffFilePath);
+        using var image = (Bitmap)Image.FromFile(inputTiffFilePath);
 
-        // Create header
+        // Write file header, ColorFormat 1 for 16bpp
         var header = new SpfFileHeader
         {
             Unknown1 = 0,
             Unknown2 = 1,
-            ColorFormat = 0 // Set color format to 8bpp
+            ColorFormat = image.PixelFormat == PixelFormat.Format8bppIndexed ? (uint)0 : (uint)1
         };
-
-        // Convert header to bytes
         var headerBytes = SpfFileHeaderToBytes(header);
-
-        // Write file header
         binaryWriter.Write(headerBytes);
 
         // Write the palette
-        //SpfPalette = SpfPalette.FromBitmap(image.Palette);
+        //var spfPalette = FromBitmap(image.Palette);
+        var spfPalette = FromBitmap(image);
+        var spfPaletteByteArray = SpfPaletteToByteArray(spfPalette);
         binaryWriter.Write(spfPaletteByteArray);
+
+        // ToDo: Print Palette
+        PrintPalette(spfPalette);
 
         // Write the frame count uint
         binaryWriter.Write((uint)1);
@@ -43,7 +39,7 @@ internal abstract class PngToSpfConv
         binaryWriter.Write(frameHeaderBytes);
 
         // Write the bytesTotal (bitmap width & bitmap height) * 2 for 16bpp
-        var bytesTotal = (uint)(image.Width * image.Height)/* * 2*/;
+        var bytesTotal = image.PixelFormat == PixelFormat.Format8bppIndexed ? (uint)(image.Width * image.Height) : (uint)(image.Width * image.Height) * 2;
         binaryWriter.Write(bytesTotal);
 
         // Write the frame data
@@ -106,5 +102,27 @@ internal abstract class PngToSpfConv
         gcHandle.Free();
 
         return headerBytes;
+    }
+
+    public static void PrintPalette(SpfPaletteGen spfPalette)
+    {
+        for (int i = 0; i < 256; ++i)
+        {
+            ushort alpha = BitConverter.ToUInt16(spfPalette._alpha, 2 * i);
+            ushort rgb = BitConverter.ToUInt16(spfPalette._rgb, 2 * i);
+
+            Debug.WriteLine($"Index: {i} | Color: {spfPalette._colors[i]} | Alpha: {alpha} | RGB: {rgb}");
+        }
+    }
+
+    public static void PrintPalette(SpfPaletteStruct spfPalette)
+    {
+        for (int i = 0; i < 256; ++i)
+        {
+            ushort alpha = BitConverter.ToUInt16(spfPalette._alpha, 2 * i);
+            ushort rgb = BitConverter.ToUInt16(spfPalette._rgb, 2 * i);
+
+            Debug.WriteLine($"Index: {i} | Color: {spfPalette._colors[i]} | Alpha: {alpha} | RGB: {rgb}");
+        }
     }
 }

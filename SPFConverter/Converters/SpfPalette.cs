@@ -9,17 +9,36 @@ public class SpfPalette
         public Color[] _colors;
     }
 
-    public static SpfPaletteGen FromBitmap(ColorPalette palette)
+    public static SpfPaletteGen FromBitmap(Bitmap image)
     {
         SpfPaletteGen spfPalette;
-        spfPalette._colors = new Color[256];
-
         spfPalette._alpha = new byte[512];
         spfPalette._rgb = new byte[512];
+        spfPalette._colors = new Color[256];
 
-        for (int i = 0; i < 256; ++i)
+        Dictionary<Color, int> colorCounts = new Dictionary<Color, int>();
+    
+        for (int y = 0; y < image.Height; y++)
         {
-            Color color = palette.Entries[i];
+            for (int x = 0; x < image.Width; x++)
+            {
+                Color color = image.GetPixel(x, y);
+                if (!colorCounts.ContainsKey(color))
+                {
+                    colorCounts[color] = 1;
+                }
+                else
+                {
+                    colorCounts[color]++;
+                }
+            }
+        }
+
+        var sortedColors = colorCounts.OrderByDescending(c => c.Value).Select(c => c.Key).ToArray();
+
+        for (int i = 0; i < sortedColors.Length && i < 256; i++)
+        {
+            Color color = sortedColors[i];
             int red = color.R;
             int green = color.G;
             int blue = color.B;
@@ -30,30 +49,12 @@ public class SpfPalette
             ushort rgb = (ushort)(((red / 8) * 32 * 32) + ((green / 8) * 32) + (blue / 8));
             BitConverter.GetBytes(rgb).CopyTo(spfPalette._rgb, 2 * i);
 
-            if (alpha != 0) // Ignore #000000 (Transparent)
-            {
-                BitConverter.GetBytes(rgb).CopyTo(spfPalette._alpha, 2 * i);
-            }
+            // Set the alpha value to the _alpha array
+            spfPalette._alpha[2 * i] = (byte)alpha;
+            spfPalette._alpha[2 * i + 1] = 0;
         }
 
         return spfPalette;
-    }
-
-    public static byte[] PaletteToByteArray(ColorPalette palette)
-    {
-        int colorCount = palette.Entries.Length;
-        byte[] byteArray = new byte[colorCount * 4]; // 4 bytes for each color (ARGB)
-
-        for (int i = 0; i < colorCount; i++)
-        {
-            Color color = palette.Entries[i];
-            byteArray[i * 4] = color.A;
-            byteArray[i * 4 + 1] = color.R;
-            byteArray[i * 4 + 2] = color.G;
-            byteArray[i * 4 + 3] = color.B;
-        }
-
-        return byteArray;
     }
 
     public static byte[] SpfPaletteToByteArray(SpfPaletteGen spfPalette)

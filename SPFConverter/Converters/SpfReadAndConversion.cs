@@ -1,6 +1,6 @@
 ﻿namespace SPFverter.Converters;
 
-internal class SpfToPngConv
+internal class SpfReadAndConversion
 {
     public SpfFileHeader _mHeader;
     public SpfPaletteStruct _mPalette;
@@ -15,14 +15,14 @@ internal class SpfToPngConv
     public uint FrameCount => _mFramecount;
     public uint ByteTotal => _mBytetotal;
 
-    public static SpfToPngConv FromFile(string fileName)
+    public static SpfReadAndConversion FromFile(string fileName)
     {
         if (!File.Exists(fileName)) return null;
 
         var binaryReader = new BinaryReader(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read));
 
         // Create and Read file header
-        var spfFile = new SpfToPngConv
+        var spfFile = new SpfReadAndConversion
         {
             _mFileName = fileName,
             _mHeader = SpfFileHeader.FromBinaryReaderBlock(binaryReader)
@@ -31,6 +31,9 @@ internal class SpfToPngConv
         // If 8bpp, extract palette
         if (spfFile.ColorFormat == 0)
             spfFile._mPalette = SpfPaletteStruct.FromBinaryReaderBlock(binaryReader);
+
+        // ToDo: Print Palette
+        TiffToSpfConv.PrintPalette(spfFile._mPalette);
 
         // Read frame counts
         spfFile._mFramecount = binaryReader.ReadUInt32();
