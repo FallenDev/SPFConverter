@@ -1,4 +1,8 @@
-﻿using static SpfPalette;
+﻿using System.Windows.Forms.Design;
+using SixLabors.ImageSharp.Formats.Bmp;
+using SixLabors.ImageSharp.Processing.Processors.Quantization;
+using static SpfPalette;
+using Image = System.Drawing.Image;
 
 namespace SPFverter.Converters;
 
@@ -10,21 +14,34 @@ internal abstract class TiffToSpfConv
         using var fileStream = new FileStream(outputSpfFilePath, FileMode.Create);
         using var binaryWriter = new BinaryWriter(fileStream);
         //var image = BitmapLoader.LoadBitmap(inputTiffFilePath);
-        using var image = (Bitmap)Image.FromFile(inputTiffFilePath);
+        using var imageOrg = (Bitmap)System.Drawing.Image.FromFile(inputTiffFilePath);
+        using Image<Rgba32> image = SixLabors.ImageSharp.Image.Load<Rgba32>(inputTiffFilePath);
 
         // Write file header, ColorFormat 1 for 16bpp
         var header = new SpfFileHeader
         {
             Unknown1 = 0,
             Unknown2 = 1,
-            ColorFormat = image.PixelFormat == PixelFormat.Format8bppIndexed ? (uint)0 : (uint)1
+            ColorFormat = 0//image.PixelFormat == PixelFormat.Format8bppIndexed ? (uint)0 : (uint)1
         };
         var headerBytes = SpfFileHeaderToBytes(header);
         binaryWriter.Write(headerBytes);
 
+        // Perform quantization
+        var quantizer = new WuQuantizer(new QuantizerOptions { MaxColors = 256 });
+        image.Mutate(x => x.Quantize(quantizer));
+
+        // Save the quantized image to a memory stream as a BMP (required for compatibility with System.Drawing.Bitmap)
+        using var memoryStream = new MemoryStream();
+        image.Save(memoryStream, new BmpEncoder());
+
+        // Load the quantized image from the memory stream into a System.Drawing.Bitmap object
+        memoryStream.Position = 0;
+        using var indexedBitmap = new Bitmap(memoryStream);
+
+        var spfPalette = FromBitmap(indexedBitmap);
+
         // Write the palette
-        //var spfPalette = FromBitmap(image.Palette);
-        var spfPalette = FromBitmap(image);
         var spfPaletteByteArray = SpfPaletteToByteArray(spfPalette);
         binaryWriter.Write(spfPaletteByteArray);
 
@@ -35,28 +52,28 @@ internal abstract class TiffToSpfConv
         binaryWriter.Write((uint)1);
 
         // Write the frame header
-        var frameHeaderBytes = SpfFrameHeaderToBytes(image);
+        var frameHeaderBytes = SpfFrameHeaderToBytes(imageOrg);
         binaryWriter.Write(frameHeaderBytes);
 
         // Write the bytesTotal (bitmap width & bitmap height) * 2 for 16bpp
-        var bytesTotal = image.PixelFormat == PixelFormat.Format8bppIndexed ? (uint)(image.Width * image.Height) : (uint)(image.Width * image.Height) * 2;
+        var bytesTotal = (uint)(image.Width * image.Height);//image.PixelFormat == PixelFormat.Format8bppIndexed ? (uint)(image.Width * image.Height) : (uint)(image.Width * image.Height) * 2;
         binaryWriter.Write(bytesTotal);
 
         // Write the frame data
-        var frameDataBytes = BitmapToFrameData(image);
+        var frameDataBytes = BitmapToFrameData(imageOrg);
         binaryWriter.Write(frameDataBytes);
     }
     
     private static byte[] BitmapToFrameData(Bitmap bitmap)
     {
-        var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+        var rect = new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height);
         var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format8bppIndexed);
 
         var ptr = bitmapData.Scan0;
         var size = Math.Abs(bitmapData.Stride) * bitmap.Height;
         var frameData = new byte[size];
         Marshal.Copy(ptr, frameData, 0, size);
-
+        
         bitmap.UnlockBits(bitmapData);
 
         return frameData;

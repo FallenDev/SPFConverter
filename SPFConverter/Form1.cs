@@ -16,11 +16,11 @@ public partial class Form1 : Form
         openFileDialog = new OpenFileDialog();
         saveFileDialog = new SaveFileDialog();
 
-        var btnSpfToTiff = new Button { Text = "SPF to TIFF", AutoSize = true, Location = new Point(30, 15), BackColor = Color.DodgerBlue, ForeColor = Color.White};
+        var btnSpfToTiff = new Button { Text = "SPF to TIFF", AutoSize = true, Location = new System.Drawing.Point(30, 15), BackColor = System.Drawing.Color.DodgerBlue, ForeColor = System.Drawing.Color.White};
         btnSpfToTiff.Click += BtnSpfToTiff_Click;
         Controls.Add(btnSpfToTiff);
 
-        var btnTiffToSpf = new Button { Text = "TIFF to SPF", AutoSize = true, Location = new Point(30, 60), BackColor = Color.DodgerBlue, ForeColor = Color.White};
+        var btnTiffToSpf = new Button { Text = "TIFF to SPF", AutoSize = true, Location = new System.Drawing.Point(30, 60), BackColor = System.Drawing.Color.DodgerBlue, ForeColor = System.Drawing.Color.White};
         btnTiffToSpf.Click += BtnTiffToSpf_Click;
         Controls.Add(btnTiffToSpf);
     }
@@ -36,36 +36,29 @@ private void BtnSpfToTiff_Click(object sender, EventArgs e)
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
                 var spfFile = SpfReadAndConversion.FromFile(openFileDialog.FileName);
-
-                // ToDo: Create loop here to save multiple frames
                 Bitmap frameBitmap = spfFile.Frames[0].FrameBitmap;
 
-                // Create a 32bpp ARGB Bitmap
-                Bitmap frameBitmap32bpp = new Bitmap(frameBitmap.Width, frameBitmap.Height, PixelFormat.Format32bppArgb);
-                using (Graphics g = Graphics.FromImage(frameBitmap32bpp))
-                {
-                    g.DrawImage(frameBitmap, new Rectangle(0, 0, frameBitmap.Width, frameBitmap.Height));
-                }
+                // Create a new 32bpp Bitmap to store the ARGB values
+                Bitmap argbBitmap = new Bitmap(frameBitmap.Width, frameBitmap.Height, PixelFormat.Format32bppArgb);
 
-                // Set the alpha values for each pixel using spfFile.Palette._alpha
-                for (int y = 0; y < frameBitmap32bpp.Height; y++)
+                // Copy the indexed image to the new 32bpp Bitmap while preserving the alpha channel
+                for (int y = 0; y < frameBitmap.Height; y++)
                 {
-                    for (int x = 0; x < frameBitmap32bpp.Width; x++)
+                    for (int x = 0; x < frameBitmap.Width; x++)
                     {
-                        Color pixelColor = frameBitmap32bpp.GetPixel(x, y);
-                        int alphaIndex = pixelColor.A / 2;
-                        int alpha = spfFile._mPalette._alpha[alphaIndex];
-                        Color colorWithAlpha = Color.FromArgb(alpha, pixelColor.R, pixelColor.G, pixelColor.B);
-                        frameBitmap32bpp.SetPixel(x, y, colorWithAlpha);
+                        System.Drawing.Color indexedColor = frameBitmap.GetPixel(x, y);
+                        int alpha = spfFile._mPalette._colors[indexedColor.A].A;
+                        System.Drawing.Color argbColor = System.Drawing.Color.FromArgb(alpha, indexedColor);
+                        argbBitmap.SetPixel(x, y, argbColor);
                     }
                 }
 
                 // Set the EncoderParameters to save the TIFF with alpha transparency
                 EncoderParameters encoderParameters = new EncoderParameters(1);
-                encoderParameters.Param[0] = new EncoderParameter(Encoder.Compression, (long)EncoderValue.CompressionLZW);
+                encoderParameters.Param[0] = new EncoderParameter(Encoder.Compression, (long)EncoderValue.CompressionNone);
 
                 ImageCodecInfo tiffCodecInfo = GetEncoderInfo("image/tiff");
-                frameBitmap32bpp.Save(saveFileDialog.FileName, tiffCodecInfo, encoderParameters);
+                argbBitmap.Save(saveFileDialog.FileName, tiffCodecInfo, encoderParameters);
             }
         }
         catch (Exception ex)

@@ -6,7 +6,7 @@ public class SpfPalette
     {
         public byte[] _alpha;
         public byte[] _rgb;
-        public Color[] _colors;
+        public System.Drawing.Color[] _colors;
     }
 
     public static SpfPaletteGen FromBitmap(Bitmap image)
@@ -14,15 +14,15 @@ public class SpfPalette
         SpfPaletteGen spfPalette;
         spfPalette._alpha = new byte[512];
         spfPalette._rgb = new byte[512];
-        spfPalette._colors = new Color[256];
+        spfPalette._colors = new System.Drawing.Color[256];
 
-        Dictionary<Color, int> colorCounts = new Dictionary<Color, int>();
+        Dictionary<System.Drawing.Color, int> colorCounts = new Dictionary<System.Drawing.Color, int>();
     
         for (int y = 0; y < image.Height; y++)
         {
             for (int x = 0; x < image.Width; x++)
             {
-                Color color = image.GetPixel(x, y);
+                System.Drawing.Color color = image.GetPixel(x, y);
                 if (!colorCounts.ContainsKey(color))
                 {
                     colorCounts[color] = 1;
@@ -38,7 +38,7 @@ public class SpfPalette
 
         for (int i = 0; i < sortedColors.Length && i < 256; i++)
         {
-            Color color = sortedColors[i];
+            System.Drawing.Color color = sortedColors[i];
             int red = color.R;
             int green = color.G;
             int blue = color.B;
@@ -137,8 +137,8 @@ public class BitmapLoader
         {
             if (i >= transparencyData.Length)
                 break;
-            Color col = pal.Entries[i];
-            pal.Entries[i] = Color.FromArgb(transparencyData[i], col.R, col.G, col.B);
+            System.Drawing.Color col = pal.Entries[i];
+            pal.Entries[i] = System.Drawing.Color.FromArgb(transparencyData[i], col.R, col.G, col.B);
         }
         loadedImage.Palette = pal;
         return loadedImage;
@@ -197,12 +197,12 @@ public class BitmapLoader
     /// <returns>The cloned image</returns>
     public static Bitmap CloneImage(Bitmap sourceImage)
     {
-        Rectangle rect = new Rectangle(0, 0, sourceImage.Width, sourceImage.Height);
+        System.Drawing.Rectangle rect = new System.Drawing.Rectangle(0, 0, sourceImage.Width, sourceImage.Height);
         Bitmap targetImage = new Bitmap(rect.Width, rect.Height, sourceImage.PixelFormat);
         targetImage.SetResolution(sourceImage.HorizontalResolution, sourceImage.VerticalResolution);
         BitmapData sourceData = sourceImage.LockBits(rect, ImageLockMode.ReadOnly, sourceImage.PixelFormat);
         BitmapData targetData = targetImage.LockBits(rect, ImageLockMode.WriteOnly, targetImage.PixelFormat);
-        Int32 actualDataWidth = ((Image.GetPixelFormatSize(sourceImage.PixelFormat) * rect.Width) + 7) / 8;
+        Int32 actualDataWidth = ((System.Drawing.Image.GetPixelFormatSize(sourceImage.PixelFormat) * rect.Width) + 7) / 8;
         Int32 h = sourceImage.Height;
         Int32 origStride = sourceData.Stride;
         Boolean isFlipped = origStride < 0;

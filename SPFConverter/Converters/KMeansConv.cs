@@ -79,15 +79,15 @@ public class KMeans<T>
 
     private T CalculateMean(List<T> items)
     {
-        if (typeof(T) == typeof(Color))
+        if (typeof(T) == typeof(System.Drawing.Color))
         {
-            return (T)(object)CalculateMeanColor(items.Cast<Color>());
+            return (T)(object)CalculateMeanColor(items.Cast<System.Drawing.Color>());
         }
 
         throw new NotSupportedException($"Mean calculation is not supported for type {typeof(T)}.");
     }
 
-    private Color CalculateMeanColor(IEnumerable<Color> colors)
+    private System.Drawing.Color CalculateMeanColor(IEnumerable<System.Drawing.Color> colors)
     {
         long rSum = 0;
         long gSum = 0;
@@ -104,9 +104,9 @@ public class KMeans<T>
 
         if (count == 0)
         {
-            return Color.Empty;
+            return System.Drawing.Color.Empty;
         }
 
-        return Color.FromArgb((int)(rSum / count), (int)(gSum / count), (int)(bSum / count));
+        return System.Drawing.Color.FromArgb((int)(rSum / count), (int)(gSum / count), (int)(bSum / count));
     }
 }

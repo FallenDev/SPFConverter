@@ -4,7 +4,7 @@ public struct SpfPaletteStruct
 {
     public byte[] _alpha;
     public byte[] _rgb;
-    public Color[] _colors;
+    public System.Drawing.Color[] _colors;
 
     /// <summary>
     /// Reads SPF Image and converts to Palette
@@ -14,7 +14,7 @@ public struct SpfPaletteStruct
         SpfPaletteStruct spfPalette;
         spfPalette._alpha = br.ReadBytes(512);
         spfPalette._rgb = br.ReadBytes(512);
-        spfPalette._colors = new Color[256];
+        spfPalette._colors = new System.Drawing.Color[256];
 
         for (var index = 0; index < 256; ++index)
         {
@@ -26,7 +26,7 @@ public struct SpfPaletteStruct
             // Use the alpha value from the _alpha array
             var alpha = spfPalette._alpha[2 * index];
             
-            spfPalette._colors[index] = Color.FromArgb(alpha, red, green, blue);
+            spfPalette._colors[index] = System.Drawing.Color.FromArgb(alpha, red, green, blue);
         }
 
         return spfPalette;

@@ -118,7 +118,7 @@ public sealed class SpfFrame
         var num1 = 1;
         if (FrameBitmap.PixelFormat == PixelFormat.Format16bppRgb555) num1 = 2;
 
-        var bitmapData = FrameBitmap.LockBits(new Rectangle(0, 0, PixelWidth, PixelHeight), ImageLockMode.ReadWrite, FrameBitmap.PixelFormat);
+        var bitmapData = FrameBitmap.LockBits(new System.Drawing.Rectangle(0, 0, PixelWidth, PixelHeight), ImageLockMode.ReadWrite, FrameBitmap.PixelFormat);
         var scan0 = bitmapData.Scan0;
         var num2 = 4 - PixelWidth * num1 % 4;
 
