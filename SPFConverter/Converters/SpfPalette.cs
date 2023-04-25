@@ -9,6 +9,12 @@ public class SpfPalette
         public Color[] _colors;
     }
 
+    /// <summary>
+    /// Take Image that is full transparency from PNG, then using the colors we'll greyscale it
+    /// and then use that as the new alpha, prior to loading it back onto the SPF
+    /// </summary>
+    /// <param name="palette"></param>
+    /// <returns></returns>
     public static SpfPaletteGen FromBitmap(ColorPalette palette)
     {
         SpfPaletteGen spfPalette;
@@ -30,7 +36,35 @@ public class SpfPalette
             ushort rgb = (ushort)(((red / 8) * 32 * 32) + ((green / 8) * 32) + (blue / 8));
             BitConverter.GetBytes(rgb).CopyTo(spfPalette._rgb, 2 * i);
 
-            if (alpha != 0) // Ignore #000000 (Transparent)
+            // ToDo: Attempting to use AlphaToGrayscale for Alpha Channel
+            //if (alpha != 0)
+            //{
+            //    ushort alphaValue = (ushort)(alpha | (alpha << 8));
+            //    BitConverter.GetBytes(alphaValue).CopyTo(spfPalette._alpha, 2 * i);
+            //}
+        }
+
+        return spfPalette;
+    }
+
+    public static SpfPaletteGen FromGrayscaleBitmap(Bitmap grayscaleBitmap)
+    {
+        SpfPaletteGen spfPalette;
+        spfPalette._colors = new Color[256];
+
+        spfPalette._alpha = new byte[512];
+        spfPalette._rgb = new byte[512];
+
+        ColorPalette grayscalePalette = grayscaleBitmap.Palette;
+
+        for (int i = 0; i < 256; ++i)
+        {
+            Color color = grayscalePalette.Entries[i];
+            int alpha = color.R; // Since the image is grayscale, you can use R, G, or B components
+
+            spfPalette._colors[i] = Color.FromArgb(alpha, 0, 0, 0);
+
+            if (alpha != 0)
             {
                 ushort alphaValue = (ushort)(alpha | (alpha << 8));
                 BitConverter.GetBytes(alphaValue).CopyTo(spfPalette._alpha, 2 * i);
@@ -40,12 +74,56 @@ public class SpfPalette
         return spfPalette;
     }
 
-    public static byte[] SpfPaletteToByteArray(SpfPaletteGen spfPalette)
+
+    public static Bitmap AlphaToGrayscale(Bitmap inputImage)
+    {
+        Bitmap grayscaleImage = new Bitmap(inputImage.Width, inputImage.Height, PixelFormat.Format8bppIndexed);
+
+        ColorPalette inputPalette = inputImage.Palette;
+        ColorPalette outputPalette = grayscaleImage.Palette;
+
+        for (int i = 0; i < inputPalette.Entries.Length; i++)
+        {
+            int grayValue = inputPalette.Entries[i].A;
+            outputPalette.Entries[i] = Color.FromArgb(255, grayValue, grayValue, grayValue);
+        }
+
+        grayscaleImage.Palette = outputPalette;
+
+        Rectangle rect = new Rectangle(0, 0, inputImage.Width, inputImage.Height);
+
+        BitmapData inputData = inputImage.LockBits(rect, ImageLockMode.ReadOnly, inputImage.PixelFormat);
+        BitmapData outputData = grayscaleImage.LockBits(rect, ImageLockMode.WriteOnly, grayscaleImage.PixelFormat);
+
+        unsafe
+        {
+            byte* inputPtr = (byte*)inputData.Scan0;
+            byte* outputPtr = (byte*)outputData.Scan0;
+
+            for (int y = 0; y < inputImage.Height; y++)
+            {
+                for (int x = 0; x < inputImage.Width; x++)
+                {
+                    byte index = inputPtr[x];
+                    outputPtr[x] = index;
+                }
+                inputPtr += inputData.Stride;
+                outputPtr += outputData.Stride;
+            }
+        }
+
+        inputImage.UnlockBits(inputData);
+        grayscaleImage.UnlockBits(outputData);
+
+        return grayscaleImage;
+    }
+
+    public static byte[] SpfPaletteToByteArray(SpfPaletteGen spfPalette, SpfPaletteGen spfPaletteGray)
     {
         byte[] result = new byte[1024]; // 512 bytes for alpha and 512 bytes for rgb
 
-        Array.Copy(spfPalette._alpha, 0, result, 0, spfPalette._alpha.Length);
-        Array.Copy(spfPalette._rgb, 0, result, spfPalette._alpha.Length, spfPalette._rgb.Length);
+        Array.Copy(spfPaletteGray._alpha, 0, result, 0, spfPaletteGray._alpha.Length);
+        Array.Copy(spfPalette._rgb, 0, result, spfPaletteGray._alpha.Length, spfPalette._rgb.Length);
 
         return result;
     }

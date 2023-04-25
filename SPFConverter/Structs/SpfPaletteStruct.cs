@@ -22,8 +22,10 @@ public struct SpfPaletteStruct
             var blue = 8 * (uint16 % 32);
             var green = 8 * (uint16 / 32 % 32);
             var red = 8 * (uint16 / 32 / 32 % 32);
-            //var alpha = (red == 0 && green == 0 && blue == 0) ? 0 : 255; // Alpha is #000000, so make this transparent
-            var alpha = spfPalette._alpha[2 * index]; // Use original alpha channel
+            // ToDo: Full Transparency - Sets anything that's not a color to transparent
+            //var alpha = (red == 0 && green == 0 && blue == 0) ? 0 : 255;
+            // ToDo: Alpha Transparency - Sets as another channel, but perhaps it should be a layer?
+            var alpha = spfPalette._alpha[2 * index];
             spfPalette._colors[index] = Color.FromArgb(alpha, red, green, blue);
         }
 
