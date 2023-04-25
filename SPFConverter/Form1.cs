@@ -6,7 +6,6 @@ public partial class Form1 : Form
 {
     private OpenFileDialog openFileDialog;
     private SaveFileDialog saveFileDialog;
-    private Bitmap _loadedBitmap;
 
     public Form1()
     {
@@ -29,21 +28,22 @@ public partial class Form1 : Form
         openFileDialog.Filter = "SPF Files|*.spf";
         if (openFileDialog.ShowDialog() == DialogResult.OK)
         {
-            try
-            {
+            //try
+            //{
                 saveFileDialog.Filter = "PNG Files|*.png";
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    var spfFile = SpfToPngConv.FromFile(openFileDialog.FileName);
+                    SpfToPngConv.SpfToPng(saveFileDialog.FileName, openFileDialog.FileName);
+                    //var spfFile = SpfToPngConv.FromFile(openFileDialog.FileName);
                         
                     // ToDo: Create loop here to save multiple frames
-                    spfFile.Frames[0].FrameBitmap.Save(saveFileDialog.FileName, ImageFormat.Png);
+                    //spfFile.Frames[0].FrameBitmap.Save(saveFileDialog.FileName, ImageFormat.Png);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error converting SPF to PNG: {ex.Message}");
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    MessageBox.Show($"Error converting SPF to PNG: {ex.Message}");
+            //}
         }
     }
 
@@ -52,18 +52,18 @@ public partial class Form1 : Form
         openFileDialog.Filter = "PNG Files|*.png";
         if (openFileDialog.ShowDialog() == DialogResult.OK)
         {
-            try
-            {
+            //try
+            //{
                 saveFileDialog.Filter = "SPF Files|*.spf";
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     PngToSpfConv.PngToSpf(saveFileDialog.FileName, openFileDialog.FileName);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error converting PNG to SPF: {ex.Message} {ex.StackTrace}");
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    MessageBox.Show($"Error converting PNG to SPF: {ex.Message} {ex.StackTrace}");
+            //}
         }
     }
 }

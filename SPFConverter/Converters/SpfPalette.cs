@@ -32,28 +32,12 @@ public class SpfPalette
 
             if (alpha != 0) // Ignore #000000 (Transparent)
             {
-                BitConverter.GetBytes(rgb).CopyTo(spfPalette._alpha, 2 * i);
+                ushort alphaValue = (ushort)(alpha | (alpha << 8));
+                BitConverter.GetBytes(alphaValue).CopyTo(spfPalette._alpha, 2 * i);
             }
         }
 
         return spfPalette;
-    }
-
-    public static byte[] PaletteToByteArray(ColorPalette palette)
-    {
-        int colorCount = palette.Entries.Length;
-        byte[] byteArray = new byte[colorCount * 4]; // 4 bytes for each color (ARGB)
-
-        for (int i = 0; i < colorCount; i++)
-        {
-            Color color = palette.Entries[i];
-            byteArray[i * 4] = color.A;
-            byteArray[i * 4 + 1] = color.R;
-            byteArray[i * 4 + 2] = color.G;
-            byteArray[i * 4 + 3] = color.B;
-        }
-
-        return byteArray;
     }
 
     public static byte[] SpfPaletteToByteArray(SpfPaletteGen spfPalette)

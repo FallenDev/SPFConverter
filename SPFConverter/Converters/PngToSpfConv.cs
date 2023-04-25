@@ -12,10 +12,12 @@ internal abstract class PngToSpfConv
         using var fileStream = new FileStream(outputSpfFilePath, FileMode.Create);
         using var binaryWriter = new BinaryWriter(fileStream);
         
+        // Load and Get palette from Bitmap
         Bitmap image = BitmapLoader.LoadBitmap(inputPngFilePath);
-        ColorPalette palette = image.Palette;
-        SpfPaletteGen spfPalette = SpfPalette.FromBitmap(palette);
+        SpfPaletteGen spfPalette = SpfPalette.FromBitmap(image.Palette);
         byte[] spfPaletteByteArray = SpfPaletteToByteArray(spfPalette);
+
+        PrintPalette(spfPalette);
 
         // Create header
         var header = new SpfFileHeader
@@ -32,7 +34,6 @@ internal abstract class PngToSpfConv
         binaryWriter.Write(headerBytes);
 
         // Write the palette
-        //SpfPalette = SpfPalette.FromBitmap(image.Palette);
         binaryWriter.Write(spfPaletteByteArray);
 
         // Write the frame count uint
@@ -43,7 +44,7 @@ internal abstract class PngToSpfConv
         binaryWriter.Write(frameHeaderBytes);
 
         // Write the bytesTotal (bitmap width & bitmap height) * 2 for 16bpp
-        var bytesTotal = (uint)(image.Width * image.Height)/* * 2*/;
+        var bytesTotal = (uint)(image.Width * image.Height);
         binaryWriter.Write(bytesTotal);
 
         // Write the frame data
@@ -107,4 +108,27 @@ internal abstract class PngToSpfConv
 
         return headerBytes;
     }
+
+    public static void PrintPalette(SpfPaletteGen spfPalette)
+    {
+        for (int i = 0; i < 256; ++i)
+        {
+            ushort alpha = BitConverter.ToUInt16(spfPalette._alpha, 2 * i);
+            ushort rgb = BitConverter.ToUInt16(spfPalette._rgb, 2 * i);
+
+            Debug.WriteLine($"Index: {i} | Color: {spfPalette._colors[i]} | Alpha: {alpha} | RGB: {rgb}");
+        }
+    }
+
+    public static void PrintPalette(SpfPaletteStruct spfPalette)
+    {
+        for (int i = 0; i < 256; ++i)
+        {
+            ushort alpha = BitConverter.ToUInt16(spfPalette._alpha, 2 * i);
+            ushort rgb = BitConverter.ToUInt16(spfPalette._rgb, 2 * i);
+
+            Debug.WriteLine($"Index: {i} | Color: {spfPalette._colors[i]} | Alpha: {alpha} | RGB: {rgb}");
+        }
+    }
+
 }

@@ -8,12 +8,32 @@ internal class SpfToPngConv
     private uint _mBytetotal;
     private SpfFrame[] _mFrames;
     private string _mFileName;
+    private static byte[] _frameData;
 
     public SpfFrame[] Frames => _mFrames;
     public string FileName => _mFileName;
     public uint ColorFormat => _mHeader.ColorFormat;
     public uint FrameCount => _mFramecount;
     public uint ByteTotal => _mBytetotal;
+
+    public static void SpfToPng(string outputPngFilePath, string inputSpfFilePath)
+    {
+        SpfToPngConv spf = SpfToPngConv.FromFile(inputSpfFilePath);
+
+        // Assume the first frame is the one you want to convert to PNG
+        SpfFrame frame = spf.Frames[0];
+
+        // Get the raw frame data
+        byte[] frameData = GetRawBits();
+
+        // Convert the SPF palette and frame data to a Bitmap
+        Bitmap pngBitmap = SpfPaletteStruct.SpfPaletteToBitmap(spf._mPalette, (int)frame.PixelWidth, (int)frame.PixelHeight, frameData);
+
+        PngToSpfConv.PrintPalette(spf._mPalette);
+
+        // Save the bitmap as a PNG
+        pngBitmap.Save(outputPngFilePath, ImageFormat.Png);
+    }
 
     public static SpfToPngConv FromFile(string fileName)
     {
@@ -64,9 +84,14 @@ internal class SpfToPngConv
         {
             var byteCount = (int)Frames[index].ByteCount;
             var numArray = new byte[byteCount];
-            var rawBits = reader.ReadBytes(byteCount);
-            Frames[index].Render(rawBits);
+            _frameData = reader.ReadBytes(byteCount);
+            Frames[index].Render(_frameData);
         }
+    }
+
+    private static byte[] GetRawBits()
+    {
+        return _frameData;
     }
 }
 
