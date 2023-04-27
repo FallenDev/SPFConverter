@@ -14,18 +14,6 @@ internal abstract class PngToSpfConv
         
         // Load and Get palette from Bitmap
         Bitmap image = BitmapLoader.LoadBitmap(inputPngFilePath);
-        SpfPaletteGen spfPalette = SpfPalette.FromBitmap(image.Palette);
-
-        #region Grayscale Implementation
-
-        // ToDo: Remove if not compatible -- Changes Alpha Channel to Grayscale
-        var grayBitmap = SpfPalette.AlphaToGrayscale(image);
-        SpfPaletteGen spfPaletteGray = SpfPalette.FromGrayscaleBitmap(grayBitmap);
-
-        #endregion
-
-        byte[] spfPaletteByteArray = SpfPaletteToByteArray(spfPalette, spfPaletteGray);
-        PrintPalette(spfPalette);
 
         // Create header
         var header = new SpfFileHeader
@@ -42,9 +30,7 @@ internal abstract class PngToSpfConv
         binaryWriter.Write(headerBytes);
 
         // Write the palette
-        binaryWriter.Write(spfPaletteByteArray);
-        //binaryWriter.Write(spfPalette._alpha);
-        //binaryWriter.Write(spfPalette._rgb);
+        SpfPalette.BitmapToBinaryWriterBlock(image, binaryWriter);
 
         // Write the frame count uint
         binaryWriter.Write((uint)1);

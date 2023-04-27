@@ -9,123 +9,51 @@ public class SpfPalette
         public Color[] _colors;
     }
 
-    /// <summary>
-    /// Take Image that is full transparency from PNG, then using the colors we'll greyscale it
-    /// and then use that as the new alpha, prior to loading it back onto the SPF
-    /// </summary>
-    /// <param name="palette"></param>
-    /// <returns></returns>
-    public static SpfPaletteGen FromBitmap(ColorPalette palette)
+    public static void BitmapToBinaryWriterBlock(Bitmap bitmap, BinaryWriter bw)
     {
-        SpfPaletteGen spfPalette;
-        spfPalette._colors = new Color[256];
-
-        spfPalette._alpha = new byte[512];
-        spfPalette._rgb = new byte[512];
-
-        for (int i = 0; i < 256; ++i)
+        if (bitmap == null || bw == null)
         {
-            Color color = palette.Entries[i];
-            int red = color.R;
-            int green = color.G;
-            int blue = color.B;
+            throw new ArgumentNullException("Bitmap or BinaryWriter cannot be null.");
+        }
+
+        if (bitmap.PixelFormat != System.Drawing.Imaging.PixelFormat.Format8bppIndexed)
+        {
+            throw new ArgumentException("Bitmap must be in 8bpp Indexed pixel format.");
+        }
+        
+        // Get the color palette from the bitmap
+        ColorPalette palette = bitmap.Palette;
+
+        // Create arrays to store the alpha and encoded color data
+        byte[] alphaData = new byte[512];
+        byte[] encodedColors = new byte[512];
+
+        // Iterate through the color palette
+        for (int index = 0; index < palette.Entries.Length; index++)
+        {
+            Color color = palette.Entries[index];
+            int red = color.R / 8;
+            int green = color.G / 8;
+            int blue = color.B / 8;
             int alpha = color.A;
 
-            spfPalette._colors[i] = color;
+            // Calculate uint16 value
+            ushort uint16 = (ushort)(red * 32 * 32 + green * 32 + blue);
 
-            ushort rgb = (ushort)(((red / 8) * 32 * 32) + ((green / 8) * 32) + (blue / 8));
-            BitConverter.GetBytes(rgb).CopyTo(spfPalette._rgb, 2 * i);
+            // Write the encoded color to the encodedColors array
+            byte[] bytes = BitConverter.GetBytes(uint16);
+            encodedColors[2 * index] = bytes[0];
+            encodedColors[2 * index + 1] = bytes[1];
 
-            // ToDo: Attempting to use AlphaToGrayscale for Alpha Channel
-            //if (alpha != 0)
-            //{
-            //    ushort alphaValue = (ushort)(alpha | (alpha << 8));
-            //    BitConverter.GetBytes(alphaValue).CopyTo(spfPalette._alpha, 2 * i);
-            //}
+            // Write the alpha value to the alphaData array
+            alphaData[2 * index] = (byte)alpha;
         }
 
-        return spfPalette;
-    }
+        // Write the alpha data
+        bw.Write(alphaData);
 
-    public static SpfPaletteGen FromGrayscaleBitmap(Bitmap grayscaleBitmap)
-    {
-        SpfPaletteGen spfPalette;
-        spfPalette._colors = new Color[256];
-
-        spfPalette._alpha = new byte[512];
-        spfPalette._rgb = new byte[512];
-
-        ColorPalette grayscalePalette = grayscaleBitmap.Palette;
-
-        for (int i = 0; i < 256; ++i)
-        {
-            Color color = grayscalePalette.Entries[i];
-            int alpha = color.R; // Since the image is grayscale, you can use R, G, or B components
-
-            spfPalette._colors[i] = Color.FromArgb(alpha, 0, 0, 0);
-
-            if (alpha != 0)
-            {
-                ushort alphaValue = (ushort)(alpha | (alpha << 8));
-                BitConverter.GetBytes(alphaValue).CopyTo(spfPalette._alpha, 2 * i);
-            }
-        }
-
-        return spfPalette;
-    }
-
-
-    public static Bitmap AlphaToGrayscale(Bitmap inputImage)
-    {
-        Bitmap grayscaleImage = new Bitmap(inputImage.Width, inputImage.Height, PixelFormat.Format8bppIndexed);
-
-        ColorPalette inputPalette = inputImage.Palette;
-        ColorPalette outputPalette = grayscaleImage.Palette;
-
-        for (int i = 0; i < inputPalette.Entries.Length; i++)
-        {
-            int grayValue = inputPalette.Entries[i].A;
-            outputPalette.Entries[i] = Color.FromArgb(255, grayValue, grayValue, grayValue);
-        }
-
-        grayscaleImage.Palette = outputPalette;
-
-        Rectangle rect = new Rectangle(0, 0, inputImage.Width, inputImage.Height);
-
-        BitmapData inputData = inputImage.LockBits(rect, ImageLockMode.ReadOnly, inputImage.PixelFormat);
-        BitmapData outputData = grayscaleImage.LockBits(rect, ImageLockMode.WriteOnly, grayscaleImage.PixelFormat);
-
-        unsafe
-        {
-            byte* inputPtr = (byte*)inputData.Scan0;
-            byte* outputPtr = (byte*)outputData.Scan0;
-
-            for (int y = 0; y < inputImage.Height; y++)
-            {
-                for (int x = 0; x < inputImage.Width; x++)
-                {
-                    byte index = inputPtr[x];
-                    outputPtr[x] = index;
-                }
-                inputPtr += inputData.Stride;
-                outputPtr += outputData.Stride;
-            }
-        }
-
-        inputImage.UnlockBits(inputData);
-        grayscaleImage.UnlockBits(outputData);
-
-        return grayscaleImage;
-    }
-
-    public static byte[] SpfPaletteToByteArray(SpfPaletteGen spfPalette, SpfPaletteGen spfPaletteGray)
-    {
-        byte[] result = new byte[1024]; // 512 bytes for alpha and 512 bytes for rgb
-
-        Array.Copy(spfPaletteGray._alpha, 0, result, 0, spfPaletteGray._alpha.Length);
-        Array.Copy(spfPalette._rgb, 0, result, spfPaletteGray._alpha.Length, spfPalette._rgb.Length);
-
-        return result;
+        // Write the encodedColors data
+        bw.Write(encodedColors);
     }
 }
 

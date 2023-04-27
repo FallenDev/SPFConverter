@@ -28,6 +28,7 @@ internal class SpfToPngConv
 
         // Convert the SPF palette and frame data to a Bitmap
         Bitmap pngBitmap = SpfPaletteStruct.SpfPaletteToBitmap(spf._mPalette, (int)frame.PixelWidth, (int)frame.PixelHeight, frameData);
+        //Bitmap pngBitmap = SpfPaletteStruct.ToBitmap(spf._mPalette);
 
         PngToSpfConv.PrintPalette(spf._mPalette);
 

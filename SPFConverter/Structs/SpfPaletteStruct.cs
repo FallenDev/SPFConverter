@@ -73,4 +73,34 @@ public struct SpfPaletteStruct
 
         return result;
     }
+
+    public static Bitmap ToBitmap(SpfPaletteStruct spfPalette)
+    {
+        Bitmap result = new Bitmap(256, 1, PixelFormat.Format8bppIndexed);
+        ColorPalette outputPalette = result.Palette;
+
+        for (int i = 0; i < 256; ++i)
+        {
+            ushort alphaValue = BitConverter.ToUInt16(spfPalette._alpha, 2 * i);
+            byte alpha = (byte)(alphaValue & 0xFF); // Extract the alpha channel from the value
+            Color baseColor = spfPalette._colors[i];
+
+            // Create a new color with the proper alpha channel
+            outputPalette.Entries[i] = Color.FromArgb(alpha, baseColor.R, baseColor.G, baseColor.B);
+        }
+
+        result.Palette = outputPalette;
+
+        BitmapData bmpData = result.LockBits(new Rectangle(0, 0, result.Width, result.Height),
+            ImageLockMode.WriteOnly, result.PixelFormat);
+
+        for (int x = 0; x < result.Width; ++x)
+        {
+            Marshal.WriteByte(bmpData.Scan0, x, (byte)x);
+        }
+
+        result.UnlockBits(bmpData);
+
+        return result;
+    }
 }
