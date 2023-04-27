@@ -25,7 +25,14 @@ public struct SpfPaletteStruct
             // ToDo: Full Transparency - Sets anything that's not a color to transparent
             //var alpha = (red == 0 && green == 0 && blue == 0) ? 0 : 255;
             // ToDo: Alpha Transparency - Sets as another channel, but perhaps it should be a layer?
-            var alpha = spfPalette._alpha[2 * index];
+            //var alpha = spfPalette._alpha[2 * index];
+
+            // Read the 16-bit alpha value from the _alpha array
+            var alphaUint16 = BitConverter.ToUInt16(spfPalette._alpha, 2 * index);
+
+            //Normalize the alpha value to the 0 - 255 range
+           var alpha = alphaUint16 * 255 / 65535;
+
             spfPalette._colors[index] = Color.FromArgb(alpha, red, green, blue);
         }
 

@@ -20,7 +20,7 @@ public class SpfPalette
         {
             throw new ArgumentException("Bitmap must be in 8bpp Indexed pixel format.");
         }
-        
+
         // Get the color palette from the bitmap
         ColorPalette palette = bitmap.Palette;
 
@@ -45,8 +45,14 @@ public class SpfPalette
             encodedColors[2 * index] = bytes[0];
             encodedColors[2 * index + 1] = bytes[1];
 
+            //Write the alpha value to the alphaData array
+            ushort alphaUint16 = (ushort)(alpha * 65535 / 255);
+            byte[] alphaBytes = BitConverter.GetBytes(alphaUint16);
+            alphaData[2 * index] = alphaBytes[0];
+            alphaData[2 * index + 1] = alphaBytes[1];
+
             // Write the alpha value to the alphaData array
-            alphaData[2 * index] = (byte)alpha;
+            //alphaData[2 * index] = (byte)alpha;
         }
 
         // Write the alpha data
