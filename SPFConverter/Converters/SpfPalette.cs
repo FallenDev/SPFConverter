@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Buffers.Binary;
+using System.Text;
 using SPFverter.Converters;
 
 public class SpfPalette
@@ -47,7 +48,10 @@ public class SpfPalette
             _rgb[2 * index + 1] = bytes[1];
 
             // ToDo: Write the alpha value to the alphaData array
-            var alphaUint16 = (ushort)((double)alpha * 65535 / 255);
+            //var alphaUint16 = (ushort)((double)alpha * 65535 / 255);
+            //var alphaBytes = BitConverter.GetBytes(alphaUint16);
+            var alphaUint16 = (ushort)alpha;
+            alphaUint16 = BinaryPrimitives.ReverseEndianness(alphaUint16);
             var alphaBytes = BitConverter.GetBytes(alphaUint16);
             _alpha[2 * index] = alphaBytes[0];
             _alpha[2 * index + 1] = alphaBytes[1];

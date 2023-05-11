@@ -19,23 +19,18 @@ public struct SpfPaletteStruct
         for (var index = 0; index < 256; ++index)
         {
             var uint16 = BitConverter.ToUInt16(spfPalette._rgb, 2 * index);
-            //var blue = 8 * (uint16 % 32);
-            //var green = 8 * (uint16 / 32 % 32);
-            //var red = 8 * (uint16 / 32 / 32 % 32);
             var blue = (uint16 & 31) << 3; //take the first 5 bits and shift them left 3
             var green = ((uint16 >> 5) & 31) << 3; //take the next 5 bits, shift them left 3
             var red = ((uint16 >> 10) & 31) << 3; //take the next 5 bits, shift them left 3
-
+            
             // ToDo: Full Transparency - Sets anything that's not a color to transparent
             //var alpha = (red == 0 && green == 0 && blue == 0) ? 0 : 255;
-
             // ToDo: Alpha Transparency - Sets as another channel, but perhaps it should be a layer?
             //var alpha = spfPalette._alpha[2 * index];
 
-            // ToDo: Read the 16-bit alpha value from the _alpha array
-            // ToDo: Then Normalize the alpha value to 0 - 255 range
+            // Read the 16-bit alpha value from the _alpha array
             var alphaUint16 = BitConverter.ToUInt16(spfPalette._alpha, 2 * index);
-            var alpha = alphaUint16 * 255 / 65535;
+            var alpha = alphaUint16 >> 8;
 
             spfPalette._colors[index] = Color.FromArgb(alpha, red, green, blue);
         }
