@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using SPFverter.Converters;
 
 public class SpfPalette
 {
@@ -16,17 +17,17 @@ public class SpfPalette
             throw new ArgumentNullException("Bitmap or BinaryWriter cannot be null.");
         }
 
-        if (bitmap.PixelFormat != System.Drawing.Imaging.PixelFormat.Format8bppIndexed)
-        {
-            throw new ArgumentException("Bitmap must be in 8bpp Indexed pixel format.");
-        }
+        //if (bitmap.PixelFormat != System.Drawing.Imaging.PixelFormat.Format8bppIndexed)
+        //{
+        //    throw new ArgumentException("Bitmap must be in 8bpp Indexed pixel format.");
+        //}
 
         // Get the color palette from the bitmap
         ColorPalette palette = bitmap.Palette;
 
         // Create arrays to store the alpha and encoded color data
-        byte[] alphaData = new byte[512];
-        byte[] encodedColors = new byte[512];
+        byte[] _alpha = new byte[512];
+        byte[] _rgb = new byte[512];
 
         // Iterate through the color palette
         for (int index = 0; index < palette.Entries.Length; index++)
@@ -42,24 +43,32 @@ public class SpfPalette
 
             // Write the encoded color to the encodedColors array
             byte[] bytes = BitConverter.GetBytes(uint16);
-            encodedColors[2 * index] = bytes[0];
-            encodedColors[2 * index + 1] = bytes[1];
+            _rgb[2 * index] = bytes[0];
+            _rgb[2 * index + 1] = bytes[1];
 
-            //Write the alpha value to the alphaData array
-            ushort alphaUint16 = (ushort)(alpha * 65535 / 255);
+            // ToDo: Write the alpha value to the alphaData array
+            ushort alphaUint16 = (ushort)((double)alpha * 65535 / 255);
             byte[] alphaBytes = BitConverter.GetBytes(alphaUint16);
-            alphaData[2 * index] = alphaBytes[0];
-            alphaData[2 * index + 1] = alphaBytes[1];
+            _alpha[2 * index] = alphaBytes[0];
+            _alpha[2 * index + 1] = alphaBytes[1];
 
-            // Write the alpha value to the alphaData array
-            //alphaData[2 * index] = (byte)alpha;
+            // ToDo: Write the alpha value to the alphaData array
+            //_alpha[2 * index] = (byte)alpha;
+        }
+
+        for (int i = 0; i < 256; ++i)
+        {
+            ushort alpha = BitConverter.ToUInt16(_alpha, 2 * i);
+            ushort rgb = BitConverter.ToUInt16(_rgb, 2 * i);
+
+            Debug.WriteLine($"Index: {i} | Color: {palette.Entries[i]} | Alpha: {alpha} | RGB: {rgb}");
         }
 
         // Write the alpha data
-        bw.Write(alphaData);
+        bw.Write(_alpha);
 
         // Write the encodedColors data
-        bw.Write(encodedColors);
+        bw.Write(_rgb);
     }
 }
 

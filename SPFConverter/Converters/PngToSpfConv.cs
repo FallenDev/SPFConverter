@@ -1,4 +1,5 @@
-﻿using static SpfPalette;
+﻿using ImageMagick;
+using static SpfPalette;
 
 namespace SPFverter.Converters;
 
@@ -13,7 +14,10 @@ internal abstract class PngToSpfConv
         using var binaryWriter = new BinaryWriter(fileStream);
         
         // Load and Get palette from Bitmap
-        Bitmap image = BitmapLoader.LoadBitmap(inputPngFilePath);
+        //Bitmap image = BitmapLoader.LoadBitmap(inputPngFilePath);
+
+        // ToDo: Attempting to convert image back from png 48
+        var image = LoadImagePng48(inputPngFilePath);
 
         // Create header
         var header = new SpfFileHeader
@@ -46,6 +50,17 @@ internal abstract class PngToSpfConv
         // Write the frame data
         var frameDataBytes = BitmapToFrameData(image);
         binaryWriter.Write(frameDataBytes);
+    }
+
+    private static Bitmap LoadImagePng48(string inputPngFilePath)
+    {
+        using var image = new MagickImage(inputPngFilePath);
+        // The image will be read with a bit depth of 16
+        image.Depth = 16;
+        // Convert the MagickImage to a byte array
+        byte[] imageBytes = image.ToByteArray();
+        // Convert the byte array to a Bitmap
+        return BitmapLoader.LoadBitmap(imageBytes);
     }
     
     private static byte[] BitmapToFrameData(Bitmap bitmap)

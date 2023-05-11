@@ -1,4 +1,6 @@
-﻿namespace SPFverter.Converters;
+﻿using ImageMagick;
+
+namespace SPFverter.Converters;
 
 internal class SpfToPngConv
 {
@@ -33,8 +35,24 @@ internal class SpfToPngConv
         PngToSpfConv.PrintPalette(spf._mPalette);
 
         // Save the bitmap as a PNG
-        pngBitmap.Save(outputPngFilePath, ImageFormat.Png);
+        //pngBitmap.Save(outputPngFilePath, ImageFormat.Png);
+
+        // ToDo: Attempting to convert image to png 48 to save alpha data as 16 bytes
+        SaveImagePng48(outputPngFilePath, pngBitmap);
     }
+
+    private static void SaveImagePng48(string outputPngFilePath, Bitmap map)
+    {
+        // Convert Bitmap to Byte Array
+        var memStream = new MemoryStream();
+        map.Save(memStream, ImageFormat.Png);
+        byte[] mapBytes = memStream.ToArray();
+        using var image = new MagickImage(map);
+        // The image will be saved with a bit depth of 16
+        image.Depth = 16;
+        image.Write(outputPngFilePath, MagickFormat.Png48);
+    }
+
 
     public static SpfToPngConv FromFile(string fileName)
     {
