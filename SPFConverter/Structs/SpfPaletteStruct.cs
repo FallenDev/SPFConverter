@@ -35,8 +35,7 @@ public struct SpfPaletteStruct
             // ToDo: Read the 16-bit alpha value from the _alpha array
             // ToDo: Then Normalize the alpha value to 0 - 255 range
             var alphaUint16 = BitConverter.ToUInt16(spfPalette._alpha, 2 * index);
-            //var alpha = alphaUint16 * 255 / 65535;
-            var alpha = alphaUint16 >> 8; 
+            var alpha = alphaUint16 * 255 / 65535;
 
             spfPalette._colors[index] = Color.FromArgb(alpha, red, green, blue);
         }

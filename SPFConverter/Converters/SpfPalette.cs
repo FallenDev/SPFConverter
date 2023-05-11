@@ -23,32 +23,32 @@ public class SpfPalette
         //}
 
         // Get the color palette from the bitmap
-        ColorPalette palette = bitmap.Palette;
+        var palette = bitmap.Palette;
 
         // Create arrays to store the alpha and encoded color data
-        byte[] _alpha = new byte[512];
-        byte[] _rgb = new byte[512];
+        var _alpha = new byte[512];
+        var _rgb = new byte[512];
 
         // Iterate through the color palette
-        for (int index = 0; index < palette.Entries.Length; index++)
+        for (var index = 0; index < palette.Entries.Length; index++)
         {
-            Color color = palette.Entries[index];
-            int red = color.R / 8;
-            int green = color.G / 8;
-            int blue = color.B / 8;
+            var color = palette.Entries[index];
+            var red = color.R / 8;
+            var green = color.G / 8;
+            var blue = color.B / 8;
             int alpha = color.A;
 
             // Calculate uint16 value
-            ushort uint16 = (ushort)(red * 32 * 32 + green * 32 + blue);
+            var uint16 = (ushort)(red * 32 * 32 + green * 32 + blue);
 
             // Write the encoded color to the encodedColors array
-            byte[] bytes = BitConverter.GetBytes(uint16);
+            var bytes = BitConverter.GetBytes(uint16);
             _rgb[2 * index] = bytes[0];
             _rgb[2 * index + 1] = bytes[1];
 
             // ToDo: Write the alpha value to the alphaData array
-            ushort alphaUint16 = (ushort)((double)alpha * 65535 / 255);
-            byte[] alphaBytes = BitConverter.GetBytes(alphaUint16);
+            var alphaUint16 = (ushort)((double)alpha * 65535 / 255);
+            var alphaBytes = BitConverter.GetBytes(alphaUint16);
             _alpha[2 * index] = alphaBytes[0];
             _alpha[2 * index + 1] = alphaBytes[1];
 
@@ -56,10 +56,10 @@ public class SpfPalette
             //_alpha[2 * index] = (byte)alpha;
         }
 
-        for (int i = 0; i < 256; ++i)
+        for (var i = 0; i < 256; ++i)
         {
-            ushort alpha = BitConverter.ToUInt16(_alpha, 2 * i);
-            ushort rgb = BitConverter.ToUInt16(_rgb, 2 * i);
+            var alpha = BitConverter.ToUInt16(_alpha, 2 * i);
+            var rgb = BitConverter.ToUInt16(_rgb, 2 * i);
 
             Debug.WriteLine($"Index: {i} | Color: {palette.Entries[i]} | Alpha: {alpha} | RGB: {rgb}");
         }
@@ -87,7 +87,7 @@ public class BitmapLoader
     /// <returns>The loaded image</returns>
     public static Bitmap LoadBitmap(String filename)
     {
-        Byte[] data = File.ReadAllBytes(filename);
+        var data = File.ReadAllBytes(filename);
         return LoadBitmap(data);
     }
 
@@ -103,27 +103,27 @@ public class BitmapLoader
         if (data.Length > PNG_IDENTIFIER.Length)
         {
             // Check if the image is a PNG.
-            Byte[] compareData = new Byte[PNG_IDENTIFIER.Length];
+            var compareData = new Byte[PNG_IDENTIFIER.Length];
             Array.Copy(data, compareData, PNG_IDENTIFIER.Length);
             if (PNG_IDENTIFIER.SequenceEqual(compareData))
             {
                 // Check if it contains a palette.
                 // I'm sure it can be looked up in the header somehow, but meh.
-                Int32 plteOffset = FindChunk(data, "PLTE");
+                var plteOffset = FindChunk(data, "PLTE");
                 if (plteOffset != -1)
                 {
                     // Check if it contains a palette transparency chunk.
-                    Int32 trnsOffset = FindChunk(data, "tRNS");
+                    var trnsOffset = FindChunk(data, "tRNS");
                     if (trnsOffset != -1)
                     {
                         // Get chunk
-                        Int32 trnsLength = GetChunkDataLength(data, trnsOffset);
+                        var trnsLength = GetChunkDataLength(data, trnsOffset);
                         transparencyData = new Byte[trnsLength];
                         Array.Copy(data, trnsOffset + 8, transparencyData, 0, trnsLength);
                         // filter out the palette alpha chunk, make new data array
-                        Byte[] data2 = new Byte[data.Length - (trnsLength + 12)];
+                        var data2 = new Byte[data.Length - (trnsLength + 12)];
                         Array.Copy(data, 0, data2, 0, trnsOffset);
-                        Int32 trnsEnd = trnsOffset + trnsLength + 12;
+                        var trnsEnd = trnsOffset + trnsLength + 12;
                         Array.Copy(data, trnsEnd, data2, trnsOffset, data.Length - trnsEnd);
                         data = data2;
                     }
@@ -131,17 +131,17 @@ public class BitmapLoader
             }
         }
         Bitmap loadedImage;
-        using (MemoryStream ms = new MemoryStream(data))
-        using (Bitmap tmp = new Bitmap(ms))
+        using (var ms = new MemoryStream(data))
+        using (var tmp = new Bitmap(ms))
             loadedImage = CloneImage(tmp);
-        ColorPalette pal = loadedImage.Palette;
+        var pal = loadedImage.Palette;
         if (pal.Entries.Length == 0 || transparencyData == null)
             return loadedImage;
-        for (Int32 i = 0; i < pal.Entries.Length; i++)
+        for (var i = 0; i < pal.Entries.Length; i++)
         {
             if (i >= transparencyData.Length)
                 break;
-            Color col = pal.Entries[i];
+            var col = pal.Entries[i];
             pal.Entries[i] = Color.FromArgb(transparencyData[i], col.R, col.G, col.B);
         }
         loadedImage.Palette = pal;
@@ -159,12 +159,12 @@ public class BitmapLoader
     {
         if (chunkName.Length != 4)
             throw new ArgumentException("Chunk must be 4 characters!", "chunkName");
-        Byte[] chunkNamebytes = Encoding.ASCII.GetBytes(chunkName);
+        var chunkNamebytes = Encoding.ASCII.GetBytes(chunkName);
         if (chunkNamebytes.Length != 4)
             throw new ArgumentException("Chunk must be 4 characters!", "chunkName");
-        Int32 offset = PNG_IDENTIFIER.Length;
-        Int32 end = data.Length;
-        Byte[] testBytes = new Byte[4];
+        var offset = PNG_IDENTIFIER.Length;
+        var end = data.Length;
+        var testBytes = new Byte[4];
         // continue until either the end is reached, or there is not enough space behind it for reading a new chunk
         while (offset + 12 <= end)
         {
@@ -175,7 +175,7 @@ public class BitmapLoader
             //    return offset;
             if (chunkNamebytes.SequenceEqual(testBytes))
                 return offset;
-            Int32 chunkLength = GetChunkDataLength(data, offset);
+            var chunkLength = GetChunkDataLength(data, offset);
             // chunk size + chunk header + chunk checksum = 12 bytes.
             offset += 12 + chunkLength;
         }
@@ -187,7 +187,7 @@ public class BitmapLoader
         if (offset + 4 > data.Length)
             throw new IndexOutOfRangeException("Bad chunk size in png image.");
         // Don't want to use BitConverter; then you have to check platform endianness and all that mess.
-        Int32 length = data[offset + 3] + (data[offset + 2] << 8) + (data[offset + 1] << 16) + (data[offset] << 24);
+        var length = data[offset + 3] + (data[offset + 2] << 8) + (data[offset + 1] << 16) + (data[offset] << 24);
         if (length < 0)
             throw new IndexOutOfRangeException("Bad chunk size in png image.");
         return length;
@@ -201,22 +201,22 @@ public class BitmapLoader
     /// <returns>The cloned image</returns>
     public static Bitmap CloneImage(Bitmap sourceImage)
     {
-        Rectangle rect = new Rectangle(0, 0, sourceImage.Width, sourceImage.Height);
-        Bitmap targetImage = new Bitmap(rect.Width, rect.Height, sourceImage.PixelFormat);
+        var rect = new Rectangle(0, 0, sourceImage.Width, sourceImage.Height);
+        var targetImage = new Bitmap(rect.Width, rect.Height, sourceImage.PixelFormat);
         targetImage.SetResolution(sourceImage.HorizontalResolution, sourceImage.VerticalResolution);
-        BitmapData sourceData = sourceImage.LockBits(rect, ImageLockMode.ReadOnly, sourceImage.PixelFormat);
-        BitmapData targetData = targetImage.LockBits(rect, ImageLockMode.WriteOnly, targetImage.PixelFormat);
-        Int32 actualDataWidth = ((Image.GetPixelFormatSize(sourceImage.PixelFormat) * rect.Width) + 7) / 8;
-        Int32 h = sourceImage.Height;
-        Int32 origStride = sourceData.Stride;
-        Boolean isFlipped = origStride < 0;
+        var sourceData = sourceImage.LockBits(rect, ImageLockMode.ReadOnly, sourceImage.PixelFormat);
+        var targetData = targetImage.LockBits(rect, ImageLockMode.WriteOnly, targetImage.PixelFormat);
+        var actualDataWidth = ((Image.GetPixelFormatSize(sourceImage.PixelFormat) * rect.Width) + 7) / 8;
+        var h = sourceImage.Height;
+        var origStride = sourceData.Stride;
+        var isFlipped = origStride < 0;
         origStride = Math.Abs(origStride); // Fix for negative stride in BMP format.
-        Int32 targetStride = targetData.Stride;
-        Byte[] imageData = new Byte[actualDataWidth];
-        IntPtr sourcePos = sourceData.Scan0;
-        IntPtr destPos = targetData.Scan0;
+        var targetStride = targetData.Stride;
+        var imageData = new Byte[actualDataWidth];
+        var sourcePos = sourceData.Scan0;
+        var destPos = targetData.Scan0;
         // Copy line by line, skipping by stride but copying actual data width
-        for (Int32 y = 0; y < h; y++)
+        for (var y = 0; y < h; y++)
         {
             Marshal.Copy(sourcePos, imageData, 0, actualDataWidth);
             Marshal.Copy(imageData, 0, destPos, actualDataWidth);

@@ -12,12 +12,12 @@ internal abstract class PngToSpfConv
         // Initiate SPF write
         using var fileStream = new FileStream(outputSpfFilePath, FileMode.Create);
         using var binaryWriter = new BinaryWriter(fileStream);
-        
+
         // Load and Get palette from Bitmap
-        //Bitmap image = BitmapLoader.LoadBitmap(inputPngFilePath);
+        Bitmap image = BitmapLoader.LoadBitmap(inputPngFilePath);
 
         // ToDo: Attempting to convert image back from png 48
-        var image = LoadImagePng48(inputPngFilePath);
+        //var image = LoadImagePng48(inputPngFilePath);
 
         // Create header
         var header = new SpfFileHeader
