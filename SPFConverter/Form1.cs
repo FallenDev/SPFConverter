@@ -11,9 +11,6 @@ public partial class Form1 : Form
     {
         InitializeComponent();
 
-        openFileDialog = new OpenFileDialog();
-        saveFileDialog = new SaveFileDialog();
-
         var btnSpfToPng = new Button { Text = "SPF to Modern", AutoSize = true, Location = new Point(30, 15), BackColor = Color.Red, ForeColor = Color.White };
         btnSpfToPng.Click += BtnSpfToModern_Click;
         Controls.Add(btnSpfToPng);
@@ -29,12 +26,14 @@ public partial class Form1 : Form
 
     private void BtnSpfToModern_Click(object sender, EventArgs e)
     {
+        openFileDialog = new OpenFileDialog();
         openFileDialog.Filter = "SPF Files|*.spf";
         if (openFileDialog.ShowDialog() != DialogResult.OK) return;
         var spfPath = openFileDialog.FileName;
 
         try
         {
+            saveFileDialog = new SaveFileDialog();
             if (saveFileDialog.ShowDialog() != DialogResult.OK) return;
             var spfImage = SpfImage.Read(spfPath);
             spfImage.WriteImg(saveFileDialog.FileName);
@@ -47,12 +46,15 @@ public partial class Form1 : Form
 
     private void BtnModernToSpf_Click(object sender, EventArgs e)
     {
+        openFileDialog = new OpenFileDialog();
         if (openFileDialog.ShowDialog() != DialogResult.OK) return;
         var imagePath = openFileDialog.FileName;
         var imageList = new List<string> { imagePath };
 
         try
         {
+            saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = "SPF Files|*.spf";
             if (saveFileDialog.ShowDialog() != DialogResult.OK) return;
             using var imageCollection = new MagickImageCollection();
 
@@ -72,6 +74,7 @@ public partial class Form1 : Form
 
     private void BtnMultiToSpf_Click(object sender, EventArgs e)
     {
+        openFileDialog = new OpenFileDialog();
         if (openFileDialog.ShowDialog() != DialogResult.OK) return;
         var imagePath = openFileDialog.FileNames;
         var imageList = new List<string>();
@@ -79,6 +82,8 @@ public partial class Form1 : Form
 
         try
         {
+            saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = "SPF Files|*.spf";
             if (saveFileDialog.ShowDialog() != DialogResult.OK) return;
             using var imageCollection = new MagickImageCollection();
 
