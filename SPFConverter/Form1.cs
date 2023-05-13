@@ -20,7 +20,7 @@ public partial class Form1 : Form
         btnImgToSpf.Click += BtnModernToSpf_Click;
         Controls.Add(btnImgToSpf);
 
-        var btnMultiToSpf = new Button { Text = "Multi to SPF", AutoSize = true, Location = new Point(30, 105), BackColor = Color.DodgerBlue, ForeColor = Color.White };
+        var btnMultiToSpf = new Button { Text = "Folder to SPF", AutoSize = true, Location = new Point(30, 105), BackColor = Color.DodgerBlue, ForeColor = Color.White };
         btnMultiToSpf.Click += BtnMultiToSpf_Click;
         Controls.Add(btnMultiToSpf);
     }
