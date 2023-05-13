@@ -11,18 +11,6 @@ public partial class Form1 : Form
     public Form1()
     {
         InitializeComponent();
-
-        var btnSpfToPng = new Button { Text = "SPF to Modern", AutoSize = true, Location = new Point(30, 15), BackColor = Color.Red, ForeColor = Color.White };
-        btnSpfToPng.Click += BtnSpfToModern_Click;
-        Controls.Add(btnSpfToPng);
-
-        var btnImgToSpf = new Button { Text = "Modern to SPF", AutoSize = true, Location = new Point(30, 60), BackColor = Color.DodgerBlue, ForeColor = Color.White };
-        btnImgToSpf.Click += BtnModernToSpf_Click;
-        Controls.Add(btnImgToSpf);
-
-        var btnMultiToSpf = new Button { Text = "Folder to SPF", AutoSize = true, Location = new Point(30, 105), BackColor = Color.DodgerBlue, ForeColor = Color.White };
-        btnMultiToSpf.Click += BtnMultiToSpf_Click;
-        Controls.Add(btnMultiToSpf);
     }
 
     private void BtnSpfToModern_Click(object sender, EventArgs e)
@@ -36,6 +24,7 @@ public partial class Form1 : Form
         {
             saveFileDialog = new SaveFileDialog();
             if (saveFileDialog.ShowDialog() != DialogResult.OK) return;
+
             var spfImage = SpfImage.Read(spfPath);
             spfImage.WriteImg(saveFileDialog.FileName);
         }
@@ -50,21 +39,18 @@ public partial class Form1 : Form
         openFileDialog = new OpenFileDialog();
         if (openFileDialog.ShowDialog() != DialogResult.OK) return;
         var imagePath = openFileDialog.FileName;
-        var imageList = new List<string> { imagePath };
 
         try
         {
             saveFileDialog = new SaveFileDialog();
             saveFileDialog.Filter = "SPF Files|*.spf";
             if (saveFileDialog.ShowDialog() != DialogResult.OK) return;
+
             using var imageCollection = new MagickImageCollection();
-
-            foreach (var image in imageList)
             {
-                imageCollection.Add(image);
+                imageCollection.Add(imagePath);
             }
-
-            var spfImage = SpfImage.FromMagickImageCollection(imageCollection);
+            var spfImage = SpfImage.FromMagickImageCollection(imageCollection, DitherMethod.FloydSteinberg);
             spfImage.WriteSpf(saveFileDialog.FileName);
         }
         catch (Exception ex)
@@ -73,7 +59,41 @@ public partial class Form1 : Form
         }
     }
 
-    private void BtnMultiToSpf_Click(object sender, EventArgs e)
+    private void BtnSpfToFolder_Click(object sender, EventArgs e)
+    {
+        var inputPath = textBox1.Text;
+        if (inputPath.Length == 0)
+        {
+            MessageBox.Show($@"Add an input path, or click Input Path:");
+            return;
+        }
+
+        var dir = new DirectoryInfo(inputPath);
+        var images = dir.GetFiles("*.spf");
+        var outputPath = textBox2.Text;
+        if (outputPath.Length == 0)
+        {
+            MessageBox.Show($@"Add an output path, or click Output Path:");
+            return;
+        }
+
+        //try
+        //{
+            foreach (var image in images)
+            {
+                var spfImage = SpfImage.Read(image.FullName);
+                if (spfImage == null) continue;
+                var nameSplit = image.Name.Split('.');
+                spfImage.WriteImg($"{outputPath}\\{nameSplit[0]}.png");
+            }
+        //}
+        //catch (Exception ex)
+        //{
+        //    MessageBox.Show($@"Error converting Images: {ex.Message}");
+        //}
+    }
+
+    private void BtnFolderToSpf_Click(object sender, EventArgs e)
     {
         openFolderDialog = new FolderBrowserDialog();
         if (openFolderDialog.ShowDialog() != DialogResult.OK) return;
@@ -98,7 +118,7 @@ public partial class Form1 : Form
                 imageCollection.Add(image);
             }
 
-            var spfImage = SpfImage.FromMagickImageCollection(imageCollection);
+            var spfImage = SpfImage.FromMagickImageCollection(imageCollection, DitherMethod.FloydSteinberg);
             spfImage.WriteSpf(saveFileDialog.FileName);
         }
         catch (Exception ex)

@@ -15,6 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\SpfConverter\SpfConverter\SpfConverter.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="System.Diagnostics" />
   </ItemGroup>
 
