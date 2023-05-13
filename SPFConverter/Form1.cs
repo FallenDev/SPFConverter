@@ -5,6 +5,7 @@ namespace SPFverter;
 public partial class Form1 : Form
 {
     private OpenFileDialog openFileDialog;
+    private FolderBrowserDialog openFolderDialog;
     private SaveFileDialog saveFileDialog;
 
     public Form1()
@@ -74,11 +75,16 @@ public partial class Form1 : Form
 
     private void BtnMultiToSpf_Click(object sender, EventArgs e)
     {
-        openFileDialog = new OpenFileDialog();
-        if (openFileDialog.ShowDialog() != DialogResult.OK) return;
-        var imagePath = openFileDialog.FileNames;
+        openFolderDialog = new FolderBrowserDialog();
+        if (openFolderDialog.ShowDialog() != DialogResult.OK) return;
+        var imagePath = openFolderDialog.SelectedPath;
+        var dir = new DirectoryInfo(imagePath);
         var imageList = new List<string>();
-        imageList.AddRange(imagePath);
+
+        foreach (var images in dir.GetFiles("*"))
+        {
+            imageList.Add(images.FullName);
+        }
 
         try
         {
