@@ -1,4 +1,4 @@
-using SPFverter.Converters;
+using SpfConverter.Spf;
 
 namespace SPFverter;
 
@@ -14,56 +14,85 @@ public partial class Form1 : Form
         openFileDialog = new OpenFileDialog();
         saveFileDialog = new SaveFileDialog();
 
-        var btnSpfToPng = new Button { Text = "SPF to PNG", AutoSize = true, Location = new Point(30, 15), BackColor = Color.DodgerBlue, ForeColor = Color.White};
-        btnSpfToPng.Click += BtnSpfToPng_Click;
+        var btnSpfToPng = new Button { Text = "SPF to Modern", AutoSize = true, Location = new Point(30, 15), BackColor = Color.Red, ForeColor = Color.White };
+        btnSpfToPng.Click += BtnSpfToModern_Click;
         Controls.Add(btnSpfToPng);
 
-        var btnPngToSpf = new Button { Text = "PNG to SPF", AutoSize = true, Location = new Point(30, 60), BackColor = Color.DodgerBlue, ForeColor = Color.White};
-        btnPngToSpf.Click += BtnPngToSpf_Click;
-        Controls.Add(btnPngToSpf);
+        var btnImgToSpf = new Button { Text = "Modern to SPF", AutoSize = true, Location = new Point(30, 60), BackColor = Color.DodgerBlue, ForeColor = Color.White };
+        btnImgToSpf.Click += BtnModernToSpf_Click;
+        Controls.Add(btnImgToSpf);
+
+        var btnMultiToSpf = new Button { Text = "Multi to SPF", AutoSize = true, Location = new Point(30, 105), BackColor = Color.DodgerBlue, ForeColor = Color.White };
+        btnMultiToSpf.Click += BtnMultiToSpf_Click;
+        Controls.Add(btnMultiToSpf);
     }
 
-    private void BtnSpfToPng_Click(object sender, EventArgs e)
+    private void BtnSpfToModern_Click(object sender, EventArgs e)
     {
         openFileDialog.Filter = "SPF Files|*.spf";
-        if (openFileDialog.ShowDialog() == DialogResult.OK)
+        if (openFileDialog.ShowDialog() != DialogResult.OK) return;
+        var spfPath = openFileDialog.FileName;
+
+        try
         {
-            //try
-            //{
-                saveFileDialog.Filter = "PNG Files|*.png";
-                if (saveFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    SpfToPngConv.SpfToPng(saveFileDialog.FileName, openFileDialog.FileName);
-                    //var spfFile = SpfToPngConv.FromFile(openFileDialog.FileName);
-                        
-                    // ToDo: Create loop here to save multiple frames
-                    //spfFile.Frames[0].FrameBitmap.Save(saveFileDialog.FileName, ImageFormat.Png);
-                }
-            //}
-            //catch (Exception ex)
-            //{
-            //    MessageBox.Show($"Error converting SPF to PNG: {ex.Message}");
-            //}
+            if (saveFileDialog.ShowDialog() != DialogResult.OK) return;
+            var spfImage = SpfImage.Read(spfPath);
+            spfImage.WriteImg(saveFileDialog.FileName);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($@"Error converting SPF: {ex.Message}");
         }
     }
 
-    private void BtnPngToSpf_Click(object sender, EventArgs e)
+    private void BtnModernToSpf_Click(object sender, EventArgs e)
     {
-        openFileDialog.Filter = "PNG Files|*.png";
-        if (openFileDialog.ShowDialog() == DialogResult.OK)
+        if (openFileDialog.ShowDialog() != DialogResult.OK) return;
+        var imagePath = openFileDialog.FileName;
+        var imageList = new List<string> { imagePath };
+
+        try
         {
-            //try
-            //{
-                saveFileDialog.Filter = "SPF Files|*.spf";
-                if (saveFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    PngToSpfConv.PngToSpf(saveFileDialog.FileName, openFileDialog.FileName);
-                }
-            //}
-            //catch (Exception ex)
-            //{
-            //    MessageBox.Show($"Error converting PNG to SPF: {ex.Message} {ex.StackTrace}");
-            //}
+            if (saveFileDialog.ShowDialog() != DialogResult.OK) return;
+            using var imageCollection = new MagickImageCollection();
+
+            foreach (var image in imageList)
+            {
+                imageCollection.Add(image);
+            }
+
+            var spfImage = SpfImage.FromMagickImageCollection(imageCollection);
+            spfImage.WriteSpf(saveFileDialog.FileName);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($@"Error converting Images: {ex.Message}");
+        }
+    }
+
+    private void BtnMultiToSpf_Click(object sender, EventArgs e)
+    {
+        if (openFileDialog.ShowDialog() != DialogResult.OK) return;
+        var imagePath = openFileDialog.FileNames;
+        var imageList = new List<string>();
+        imageList.AddRange(imagePath);
+
+        try
+        {
+            if (saveFileDialog.ShowDialog() != DialogResult.OK) return;
+            using var imageCollection = new MagickImageCollection();
+
+            foreach (var image in imageList)
+            {
+                imageCollection.Add(image);
+            }
+
+            var spfImage = SpfImage.FromMagickImageCollection(imageCollection);
+            spfImage.WriteSpf(saveFileDialog.FileName);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($@"Error converting Images: {ex.Message}");
         }
     }
 }
