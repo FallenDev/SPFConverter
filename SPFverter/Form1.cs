@@ -61,36 +61,29 @@ public partial class Form1 : Form
 
     private void BtnSpfToFolder_Click(object sender, EventArgs e)
     {
-        var inputPath = textBox1.Text;
-        if (inputPath.Length == 0)
-        {
-            MessageBox.Show($@"Add an input path, or click Input Path:");
-            return;
-        }
-
+        openFolderDialog = new FolderBrowserDialog();
+        if (openFolderDialog.ShowDialog() != DialogResult.OK) return;
+        var inputPath = openFolderDialog.SelectedPath;
         var dir = new DirectoryInfo(inputPath);
         var images = dir.GetFiles("*.spf");
-        var outputPath = textBox2.Text;
-        if (outputPath.Length == 0)
-        {
-            MessageBox.Show($@"Add an output path, or click Output Path:");
-            return;
-        }
 
-        //try
-        //{
+        openFolderDialog = new FolderBrowserDialog();
+        if (openFolderDialog.ShowDialog() != DialogResult.OK) return;
+        var outputPath = openFolderDialog.SelectedPath;
+
+        try
+        {
             foreach (var image in images)
             {
                 var spfImage = SpfImage.Read(image.FullName);
-                if (spfImage == null) continue;
                 var nameSplit = image.Name.Split('.');
                 spfImage.WriteImg($"{outputPath}\\{nameSplit[0]}.png");
             }
-        //}
-        //catch (Exception ex)
-        //{
-        //    MessageBox.Show($@"Error converting Images: {ex.Message}");
-        //}
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($@"Error converting Images: {ex.Message}");
+        }
     }
 
     private void BtnFolderToSpf_Click(object sender, EventArgs e)
@@ -105,6 +98,8 @@ public partial class Form1 : Form
         {
             imageList.Add(images.FullName);
         }
+
+        imageList.Sort();
 
         try
         {
