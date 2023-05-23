@@ -5,4 +5,4 @@ After working with Sichi on this project, I have moved this respository to a GUI
 See: https://github.com/Sichii/SpfConverter
 ----------------------------------  
   
-![image](https://github.com/FallenDev/SPFConverter/assets/12104989/8128d56b-5f07-4b36-835e-1622215a0f33)
+![image](https://github.com/FallenDev/SPFConverter/assets/12104989/ef944e52-dab6-443c-a99e-a2343bcefbf2)
