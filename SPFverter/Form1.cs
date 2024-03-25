@@ -75,9 +75,16 @@ public partial class Form1 : Form
         {
             foreach (var image in images)
             {
-                var spfImage = SpfImage.Read(image.FullName);
-                var nameSplit = image.Name.Split('.');
-                spfImage.WriteImg($"{outputPath}\\{nameSplit[0]}.png");
+                try
+                {
+                    var spfImage = SpfImage.Read(image.FullName);
+                    var nameSplit = image.Name.Split('.');
+                    spfImage.WriteImg($"{outputPath}\\{nameSplit[0]}.png");
+                }
+                catch
+                {
+                    // ignored
+                }
             }
         }
         catch (Exception ex)
